@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio.hpp>
 #include <array>
+#include "broker.hpp"
 
 using boost::asio::ip::tcp;
 using std::cout;
@@ -96,11 +97,33 @@ class tcp_server
 };
 
 int main (int argc, char *argv[]) {
-    try {
-        boost::asio::io_service io_service;
-        tcp_server server(io_service);
-        io_service.run();
-    } catch(std::exception &e) {
-        std::cerr << e.what() << std::endl;
-    }
+    Element *elem_0 = new Element{ "elem_0" };
+    Element *elem_1 = new Element{ "elem_1" };
+    Element *elem_2 = new Element{ "elem_2" };
+    Element *elem_3 = new Element{ "elem_3" };
+    Broker broker{};
+    std::string topic_1 = "topic_1";
+    std::string topic_2 = "topic_2";
+    broker.Subscribe(topic_1, elem_0);
+    broker.Subscribe(topic_1, elem_1);
+    broker.Subscribe(topic_1, elem_2);
+    broker.Subscribe(topic_2, elem_3);
+
+    cout << topic_1 << " num of subs: " << broker.GetNumberOfSubscribers(topic_1) << endl;
+
+    cout << elem_1->GetName() << endl;
+    broker.Unsubscribe(topic_1, elem_1);
+    broker.Unsubscribe(topic_1, elem_0);
+    broker.Unsubscribe(topic_1, elem_2);
+    broker.Unsubscribe(topic_1, elem_2);
+
+    cout << topic_1 << " num of subs: " << broker.GetNumberOfSubscribers(topic_1) << endl;
+
+    // try {
+    //     boost::asio::io_service io_service;
+    //     tcp_server server(io_service);
+    //     io_service.run();
+    // } catch(std::exception &e) {
+    //     std::cerr << e.what() << std::endl;
+    // }
 }

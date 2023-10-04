@@ -12,7 +12,7 @@ using namespace ErrorCodes;
 class CommandDispatcher
 {
    public:
-    using command_map = std::map<std::string, ICommand *>;
+    using StorageType = std::map<std::string, ICommand *>;
 
     CommandDispatcher(TcpClient &client) :
         client_(client){
@@ -21,7 +21,7 @@ class CommandDispatcher
 
     eStatus_t AddCommand (std::string name, ICommand *command) {
         eStatus_t ret = eStatus_GeneralError;
-        command_map::const_iterator cmd_pair = map_.find(name);
+        StorageType::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair == map_.end()) {
             map_[name] = command;
             ret = eStatus_Ok;
@@ -52,7 +52,7 @@ class CommandDispatcher
 
     eStatus_t Dispatch (std::string &name, std::vector<std::string> &args) {
         eStatus_t ret = eStatus_GeneralError;
-        command_map::const_iterator cmd_pair = map_.find(name);
+        StorageType::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair != map_.end()) {
             ret = map_[name]->Execute(client_, args);
 
@@ -76,6 +76,6 @@ class CommandDispatcher
         return a;
     }
 
-    command_map map_;
+    StorageType map_;
     TcpClient &client_;
 };
