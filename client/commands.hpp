@@ -4,35 +4,37 @@
 #include <map>
 #include <vector>
 #include "parser.hpp"
+#include "tcp_client.hpp"
+#include "utils.hpp"
+
 using std::cout;
 using std::endl;
 
 namespace Commands {
 
-    typedef enum {
-        eCommandsState_Ok = 0,
-        eCommandsState_WrongArgsNum,
-        eCommandsState_GeneralError,
-    } eCommandsState_t;
-
     class ICommand
     {
        public:
         virtual ~ICommand(){};
-        virtual eCommandsState_t Execute (std::ostream &output, std::vector<std::string> &args) = 0;
+        virtual eStatus_t Execute (TcpClient &client, std::vector<std::string> &args) = 0;
     };
 
     class Connect : public ICommand
     {
        public:
-        eCommandsState_t Execute (std::ostream &output, std::vector<std::string> &args) {
+        eStatus_t Execute (TcpClient &client, std::vector<std::string> &args) {
             const size_t args_num = 2;
-            eCommandsState_t ret = eCommandsState_GeneralError;
+            eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                output << typeid(this).name() << " with " << args.size() << " agrs" << endl;
-                ret = eCommandsState_Ok;
+                cout << "Connect command"
+                     << " with " << args.size() << " agrs" << endl;
+                uint16_t port = 0;
+                if(Utils::GetPortFromStr(args[0], port)) {
+                    cout << "port = " << port << endl;
+                    ret = client.Connect(port, args[1]);
+                }
             } else {
-                ret = eCommandsState_WrongArgsNum;
+                ret = eStatus_WrongArgsNum;
             }
 
             return ret;
@@ -41,15 +43,17 @@ namespace Commands {
     class Disconnect : public ICommand
     {
        public:
-        eCommandsState_t Execute (std::ostream &output, std::vector<std::string> &args) {
+        eStatus_t Execute (TcpClient &client, std::vector<std::string> &args) {
             const size_t args_num = 0;
             cout << "size = " << args.size() << endl;
-            eCommandsState_t ret = eCommandsState_GeneralError;
+            eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                output << typeid(this).name() << " with " << args.size() << " agrs" << endl;
-                ret = eCommandsState_Ok;
+                cout << "Disonnect command"
+                     << " with " << args.size() << " agrs" << endl;
+                client.Disconnect();
+                ret = eStatus_Ok;
             } else {
-                ret = eCommandsState_WrongArgsNum;
+                ret = eStatus_WrongArgsNum;
             }
 
             return ret;
@@ -58,14 +62,14 @@ namespace Commands {
     class Publish : public ICommand
     {
        public:
-        eCommandsState_t Execute (std::ostream &output, std::vector<std::string> &args) {
+        eStatus_t Execute (TcpClient &client, std::vector<std::string> &args) {
             const size_t args_num = 2;
-            eCommandsState_t ret = eCommandsState_GeneralError;
+            eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                output << typeid(this).name() << " with " << args.size() << " agrs" << endl;
-                ret = eCommandsState_Ok;
+                cout << typeid(this).name() << " with " << args.size() << " agrs" << endl;
+                ret = eStatus_Ok;
             } else {
-                ret = eCommandsState_WrongArgsNum;
+                ret = eStatus_WrongArgsNum;
             }
 
             return ret;
@@ -74,14 +78,14 @@ namespace Commands {
     class Subscribe : public ICommand
     {
        public:
-        eCommandsState_t Execute (std::ostream &output, std::vector<std::string> &args) {
+        eStatus_t Execute (TcpClient &client, std::vector<std::string> &args) {
             const size_t args_num = 1;
-            eCommandsState_t ret = eCommandsState_GeneralError;
+            eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                output << typeid(this).name() << " with " << args.size() << " agrs" << endl;
-                ret = eCommandsState_Ok;
+                cout << typeid(this).name() << " with " << args.size() << " agrs" << endl;
+                ret = eStatus_Ok;
             } else {
-                ret = eCommandsState_WrongArgsNum;
+                ret = eStatus_WrongArgsNum;
             }
 
             return ret;
@@ -90,14 +94,14 @@ namespace Commands {
     class Unsubscribe : public ICommand
     {
        public:
-        eCommandsState_t Execute (std::ostream &output, std::vector<std::string> &args) {
+        eStatus_t Execute (TcpClient &client, std::vector<std::string> &args) {
             const size_t args_num = 1;
-            eCommandsState_t ret = eCommandsState_GeneralError;
+            eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                output << typeid(this).name() << " with " << args.size() << " agrs" << endl;
-                ret = eCommandsState_Ok;
+                cout << typeid(this).name() << " with " << args.size() << " agrs" << endl;
+                ret = eStatus_Ok;
             } else {
-                ret = eCommandsState_WrongArgsNum;
+                ret = eStatus_WrongArgsNum;
             }
 
             return ret;

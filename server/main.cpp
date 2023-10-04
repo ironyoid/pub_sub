@@ -41,27 +41,26 @@ class tcp_connection : public boost::enable_shared_from_this<tcp_connection>
     }
 
     void handle_read (const boost::system::error_code &error, size_t bytes_transferred) {
-        if(error && error != boost::asio::error::eof) {
-            std::cout << "Error: " << error.message() << "\n";
-            return;
-        }
+        if((boost::asio::error::eof != error) && (boost::asio::error::connection_reset != error)) {
+            std::string messageP;
+            {
+                std::stringstream ss;
+                ss << &message_;
+                ss.flush();
+                messageP = ss.str();
+            }
 
-        std::string messageP;
-        {
-            std::stringstream ss;
-            ss << &message_;
-            ss.flush();
-            messageP = ss.str();
+            std::cout << messageP;
+            boost::asio::async_write(socket_,
+                                     boost::asio::buffer(messageP),
+                                     boost::bind(&tcp_connection::handle_write,
+                                                 shared_from_this(),
+                                                 boost::asio::placeholders::error,
+                                                 boost::asio::placeholders::bytes_transferred));
+            start();
+        } else {
+            std::cout << "Error: Client has disconnected" << std::endl;
         }
-
-        std::cout << messageP;
-        boost::asio::async_write(socket_,
-                                 boost::asio::buffer(messageP),
-                                 boost::bind(&tcp_connection::handle_write,
-                                             shared_from_this(),
-                                             boost::asio::placeholders::error,
-                                             boost::asio::placeholders::bytes_transferred));
-        start();
     }
 
     tcp::socket socket_;

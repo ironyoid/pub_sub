@@ -1,28 +1,30 @@
 #pragma once
-#include <atomic>
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <string>
 #include <map>
 #include <vector>
 #include "commands.hpp"
+#include "tcp_client.hpp"
 
 using namespace Commands;
+using namespace ErrorCodes;
 class CommandDispatcher
 {
    public:
     using command_map = std::map<std::string, ICommand *>;
 
-    CommandDispatcher(std::ostream &output) :
-        output_(output){
+    CommandDispatcher(TcpClient &client) :
+        client_(client){
 
         };
 
-    bool AddCommand (std::string name, ICommand *command) {
-        bool ret = false;
+    eStatus_t AddCommand (std::string name, ICommand *command) {
+        eStatus_t ret = eStatus_GeneralError;
         command_map::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair == map_.end()) {
             map_[name] = command;
-            ret = true;
+            ret = eStatus_Ok;
 
         } else {
             std::cout << "Command already exists!" << std::endl;
@@ -30,8 +32,8 @@ class CommandDispatcher
         return ret;
     }
 
-    bool ParseRawString (std::string &raw_str) {
-        bool ret = false;
+    eStatus_t ParseRawString (std::string &raw_str) {
+        eStatus_t ret = eStatus_GeneralError;
         std::vector<std::string> args;
         std::string name = "";
         std::string del = " ";
@@ -48,14 +50,12 @@ class CommandDispatcher
         return ret;
     }
 
-    bool Dispatch (std::string &name, std::vector<std::string> &args) {
-        bool ret = false;
+    eStatus_t Dispatch (std::string &name, std::vector<std::string> &args) {
+        eStatus_t ret = eStatus_GeneralError;
         command_map::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair != map_.end()) {
-            auto tmp = map_[name]->Execute(output_, args);
-            if(Commands::eCommandsState_Ok == tmp) {
-                ret = true;
-            }
+            ret = map_[name]->Execute(client_, args);
+
         } else {
             std::cout << "This command is not present in the system!" << std::endl;
         }
@@ -77,5 +77,5 @@ class CommandDispatcher
     }
 
     command_map map_;
-    std::ostream &output_;
+    TcpClient &client_;
 };
