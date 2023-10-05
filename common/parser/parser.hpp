@@ -1,27 +1,34 @@
-#pragma once
+#ifndef _PARSER_H__
+#define _PARSER_H__
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <string>
 #include <map>
 #include <vector>
-#include "commands.hpp"
-#include "tcp_client.hpp"
+#include <utils.hpp>
 
-using namespace Commands;
 using namespace ErrorCodes;
-class CommandDispatcher
+
+template<class T> class ICommand
 {
    public:
-    using StorageType = std::map<std::string, ICommand *>;
+    virtual ~ICommand(){};
+    virtual eStatus_t Execute (T &client, std::vector<std::string> &args) = 0;
+};
 
-    CommandDispatcher(TcpClient &client) :
+template<class T> class CommandDispatcher
+{
+   public:
+    using StorageType = std::map<std::string, ICommand<T> *>;
+
+    CommandDispatcher(T &client) :
         client_(client){
 
         };
 
-    eStatus_t AddCommand (std::string name, ICommand *command) {
+    eStatus_t AddCommand (std::string name, ICommand<T> *command) {
         eStatus_t ret = eStatus_GeneralError;
-        StorageType::const_iterator cmd_pair = map_.find(name);
+        typename StorageType::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair == map_.end()) {
             map_[name] = command;
             ret = eStatus_Ok;
@@ -52,7 +59,7 @@ class CommandDispatcher
 
     eStatus_t Dispatch (std::string &name, std::vector<std::string> &args) {
         eStatus_t ret = eStatus_GeneralError;
-        StorageType::const_iterator cmd_pair = map_.find(name);
+        typename StorageType::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair != map_.end()) {
             ret = map_[name]->Execute(client_, args);
 
@@ -77,5 +84,7 @@ class CommandDispatcher
     }
 
     StorageType map_;
-    TcpClient &client_;
+    T &client_;
 };
+
+#endif /*_PARSER_H__*/

@@ -28,11 +28,11 @@ bool CheckAddrArgument (std::vector<std::string> args) {
 }
 
 void Loop (std::string &addr) {
-    Commands::Connect connect;
-    Commands::Disconnect disconnect;
-    Commands::Publish publish;
-    Commands::Subscribe subscribe;
-    Commands::Unsubscribe unsubscribe;
+    Commands::Connect<TcpClient> connect;
+    Commands::Disconnect<TcpClient> disconnect;
+    Commands::Publish<TcpClient> publish;
+    Commands::Subscribe<TcpClient> subscribe;
+    Commands::Unsubscribe<TcpClient> unsubscribe;
     TcpClient client(addr);
     CommandDispatcher cmd_dispatcher(client);
 

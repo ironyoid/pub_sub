@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _UTILS_H__
+#define _UTILS_H__
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <string>
@@ -14,3 +15,5 @@ namespace ErrorCodes {
         eStatus_GeneralError,
     } eStatus_t;
 } // namespace ErrorCodes
+
+#endif /*_UTILS_H__*/
