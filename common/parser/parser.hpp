@@ -13,7 +13,7 @@ template<class T> class ICommand
 {
    public:
     virtual ~ICommand(){};
-    virtual eStatus_t Execute (T &client, std::vector<std::string> &args) = 0;
+    virtual eStatus_t Execute (T &context, std::vector<std::string> &args) = 0;
 };
 
 template<class T> class CommandDispatcher
@@ -21,8 +21,8 @@ template<class T> class CommandDispatcher
    public:
     using StorageType = std::map<std::string, ICommand<T> *>;
 
-    CommandDispatcher(T &client) :
-        client_(client){
+    CommandDispatcher(T &context) :
+        context_(context){
 
         };
 
@@ -61,7 +61,7 @@ template<class T> class CommandDispatcher
         eStatus_t ret = eStatus_GeneralError;
         typename StorageType::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair != map_.end()) {
-            ret = map_[name]->Execute(client_, args);
+            ret = map_[name]->Execute(context_, args);
 
         } else {
             std::cout << "This command is not present in the system!" << std::endl;
@@ -84,7 +84,7 @@ template<class T> class CommandDispatcher
     }
 
     StorageType map_;
-    T &client_;
+    T &context_;
 };
 
 #endif /*_PARSER_H__*/

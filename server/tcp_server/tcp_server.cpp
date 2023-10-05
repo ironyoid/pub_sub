@@ -1,4 +1,10 @@
 #include "tcp_server.hpp"
+#include "parser.hpp"
+#include "utils.hpp"
+#include "commands.hpp"
+
+using namespace ErrorCodes;
+using namespace Commands;
 
 Broker::Broker() : storage_() {
 }
@@ -34,8 +40,10 @@ eStatus_t Broker::Unsubscribe(std::string &topic, ElementType element) {
     return ret;
 }
 
-TcpConnection::pointer TcpConnection::Create(const boost::asio::any_io_executor &io_context, Broker &broker) {
-    return pointer(new TcpConnection(io_context, broker));
+TcpConnection::pointer TcpConnection::Create(const boost::asio::any_io_executor &io_context,
+                                             Broker &broker,
+                                             CommandDispatcher<Broker> &parser) {
+    return pointer(new TcpConnection(io_context, broker, parser));
 }
 
 tcp::socket &TcpConnection::Socket() {
@@ -52,9 +60,12 @@ void TcpConnection::Start() {
                                  boost::asio::placeholders::bytes_transferred));
 }
 
-TcpConnection::TcpConnection(const boost::asio::any_io_executor &io_context, Broker &broker) :
+TcpConnection::TcpConnection(const boost::asio::any_io_executor &io_context,
+                             Broker &broker,
+                             CommandDispatcher<Broker> &parser) :
     socket_(io_context),
     broker_(broker),
+    parser_(parser),
     name_() {
 }
 
@@ -70,9 +81,9 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
             ss.flush();
             messageP = ss.str();
         }
-        //broker_.Subscribe(std::string & topic, ElementType element)
-
-        std::cout << messageP;
+        ErrorCodes::eStatus_t ret = parser_.ParseRawString(messageP);
+        std::cout << "Status code: " << ret << std::endl;
+        //std::cout << messageP;
         boost::asio::async_write(socket_,
                                  boost::asio::buffer(messageP),
                                  boost::bind(&TcpConnection::HandleWrite,
@@ -85,14 +96,23 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
     }
 }
 
-TcpServer::TcpServer(boost::asio::io_service &io_service, Broker &broker) :
-    acceptor_(io_service, tcp::endpoint(tcp::v4(), 1936)),
-    broker_(broker) {
+TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :
+    acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
+    broker_(),
+    parser_(broker_),
+    name_cmd(),
+    pub_cmd(),
+    sub_cmd(),
+    unsub_cmd() {
+    parser_.AddCommand("CONNECT", &name_cmd);
+    parser_.AddCommand("PUBLISH", &pub_cmd);
+    parser_.AddCommand("SUBSCRIBE", &sub_cmd);
+    parser_.AddCommand("UNSUBSCRIBE", &unsub_cmd);
     StartAccept();
 }
 
 void TcpServer::StartAccept() {
-    TcpConnection::pointer new_connection = TcpConnection::Create(acceptor_.get_executor(), broker_);
+    TcpConnection::pointer new_connection = TcpConnection::Create(acceptor_.get_executor(), broker_, parser_);
 
     acceptor_.async_accept(
         new_connection->Socket(),

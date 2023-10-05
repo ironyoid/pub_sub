@@ -9,10 +9,14 @@
 #include <array>
 #include <map>
 #include <list>
+#include <vector>
 #include "utils.hpp"
+#include "parser.hpp"
+#include "commands.hpp"
 
 using boost::asio::ip::tcp;
 using namespace ErrorCodes;
+using namespace Commands;
 
 class Broker;
 
@@ -21,17 +25,20 @@ class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
    public:
     using pointer = boost::shared_ptr<TcpConnection>;
 
-    static pointer Create (const boost::asio::any_io_executor &io_context, Broker &broker);
+    static pointer Create (const boost::asio::any_io_executor &io_context,
+                           Broker &broker,
+                           CommandDispatcher<Broker> &parser);
     tcp::socket &Socket ();
     void Start ();
 
    private:
-    TcpConnection(const boost::asio::any_io_executor &io_context, Broker &broker);
+    TcpConnection(const boost::asio::any_io_executor &io_context, Broker &broker, CommandDispatcher<Broker> &parser);
 
     void HandleWrite (const boost::system::error_code & /*error*/, size_t /*bytes_transferred*/);
     void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
 
     Broker &broker_;
+    CommandDispatcher<Broker> &parser_;
     tcp::socket socket_;
     boost::asio::streambuf message_;
     std::string name_;
@@ -54,17 +61,30 @@ class Broker
     StorageType storage_;
 };
 
+struct ContextContainer {
+    ContextContainer(Broker &broker) : broker(broker) {
+    }
+    TcpConnection::pointer ptr;
+    Broker &broker;
+};
+
 class TcpServer
 {
    public:
-    TcpServer(boost::asio::io_service &io_service, Broker &broker);
+    TcpServer(boost::asio::io_service &io_service, uint16_t port);
 
    private:
     void StartAccept ();
     void HandleAccept (TcpConnection::pointer new_connection, const boost::system::error_code &error);
 
-    Broker &broker_;
+    Broker broker_;
+    CommandDispatcher<ContextContainer> parser_;
     tcp::acceptor acceptor_;
+
+    Commands::Connect<ContextContainer> name_cmd;
+    Commands::Publish<ContextContainer> pub_cmd;
+    Commands::Subscribe<ContextContainer> sub_cmd;
+    Commands::Unsubscribe<ContextContainer> unsub_cmd;
 };
 
 #endif /* _TCP_SERVER_H__ */

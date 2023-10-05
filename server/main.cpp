@@ -9,9 +9,8 @@
 
 int main (int argc, char *argv[]) {
     try {
-        Broker broker{};
         boost::asio::io_service io_service;
-        TcpServer server(io_service, broker);
+        TcpServer server(io_service, 1936);
         io_service.run();
     } catch(std::exception &e) {
         std::cerr << e.what() << std::endl;
