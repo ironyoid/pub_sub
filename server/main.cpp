@@ -8,6 +8,7 @@
 #include "tcp_server.hpp"
 
 int main (int argc, char *argv[]) {
+    std::cout << "GOVNO!" << std::endl;
     try {
         boost::asio::io_service io_service;
         TcpServer server(io_service, 1936);

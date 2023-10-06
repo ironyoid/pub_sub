@@ -20,8 +20,19 @@ size_t Broker::GetNumberOfSubscribers(std::string &topic) {
 
 eStatus_t Broker::Subscribe(std::string &topic, ElementType element) {
     eStatus_t ret = eStatus_GeneralError;
-    storage_[topic].push_back(element);
-    ret = eStatus_Ok;
+    bool is_exist = false;
+    for(auto n : storage_[topic]) {
+        if(n->name == element->name) {
+            is_exist = true;
+            break;
+        }
+    }
+    if(false == is_exist) {
+        storage_[topic].push_back(element);
+        ret = eStatus_Ok;
+    } else {
+        ret = eStatus_ElementExistsError;
+    }
     return ret;
 }
 
@@ -40,14 +51,28 @@ eStatus_t Broker::Unsubscribe(std::string &topic, ElementType element) {
     return ret;
 }
 
+void Broker::PrintMap(void) {
+    for(auto n : storage_) {
+        cout << "[" << n.first << " ]: ";
+        for(auto k : n.second) {
+            cout << k->name << ", ";
+        }
+        cout << endl;
+    }
+}
+
 TcpConnection::pointer TcpConnection::Create(const boost::asio::any_io_executor &io_context,
                                              Broker &broker,
-                                             CommandDispatcher<Broker> &parser) {
+                                             CommandDispatcher<ContextContainer> &parser) {
     return pointer(new TcpConnection(io_context, broker, parser));
 }
 
 tcp::socket &TcpConnection::Socket() {
     return socket_;
+}
+
+TcpConnection::~TcpConnection() {
+    std::cout << name << " has been deleted!" << std::endl;
 }
 
 void TcpConnection::Start() {
@@ -62,11 +87,12 @@ void TcpConnection::Start() {
 
 TcpConnection::TcpConnection(const boost::asio::any_io_executor &io_context,
                              Broker &broker,
-                             CommandDispatcher<Broker> &parser) :
+                             CommandDispatcher<ContextContainer> &parser) :
     socket_(io_context),
     broker_(broker),
     parser_(parser),
-    name_() {
+    topics_(),
+    name() {
 }
 
 void TcpConnection::HandleWrite(const boost::system::error_code & /*error*/, size_t /*bytes_transferred*/) {
@@ -81,9 +107,11 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
             ss.flush();
             messageP = ss.str();
         }
-        ErrorCodes::eStatus_t ret = parser_.ParseRawString(messageP);
+        ContextContainer context{ broker_, shared_from_this() };
+        ErrorCodes::eStatus_t ret = parser_.ParseRawString(messageP, context);
         std::cout << "Status code: " << ret << std::endl;
-        //std::cout << messageP;
+        broker_.PrintMap();
+
         boost::asio::async_write(socket_,
                                  boost::asio::buffer(messageP),
                                  boost::bind(&TcpConnection::HandleWrite,
@@ -99,7 +127,7 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
 TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :
     acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
     broker_(),
-    parser_(broker_),
+    parser_(),
     name_cmd(),
     pub_cmd(),
     sub_cmd(),

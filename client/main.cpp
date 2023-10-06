@@ -34,7 +34,7 @@ void Loop (std::string &addr) {
     Commands::Subscribe<TcpClient> subscribe;
     Commands::Unsubscribe<TcpClient> unsubscribe;
     TcpClient client(addr);
-    CommandDispatcher cmd_dispatcher(client);
+    CommandDispatcher<TcpClient> cmd_dispatcher{};
 
     cmd_dispatcher.AddCommand("CONNECT", &connect);
     cmd_dispatcher.AddCommand("DISCONNECT", &disconnect);
@@ -46,7 +46,7 @@ void Loop (std::string &addr) {
         std::string in_line = "";
         std::getline(std::cin, in_line);
         if(in_line != "") {
-            eStatus_t status = cmd_dispatcher.ParseRawString(in_line);
+            eStatus_t status = cmd_dispatcher.ParseRawString(in_line, client);
             switch(status) {
                 case ErrorCodes::eStatus_Ok:
                     cout << "Comand has been executed successfully" << endl;

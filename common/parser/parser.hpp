@@ -21,10 +21,9 @@ template<class T> class CommandDispatcher
    public:
     using StorageType = std::map<std::string, ICommand<T> *>;
 
-    CommandDispatcher(T &context) :
-        context_(context){
+    CommandDispatcher(){
 
-        };
+    };
 
     eStatus_t AddCommand (std::string name, ICommand<T> *command) {
         eStatus_t ret = eStatus_GeneralError;
@@ -39,7 +38,7 @@ template<class T> class CommandDispatcher
         return ret;
     }
 
-    eStatus_t ParseRawString (std::string &raw_str) {
+    eStatus_t ParseRawString (std::string &raw_str, T &context) {
         eStatus_t ret = eStatus_GeneralError;
         std::vector<std::string> args;
         std::string name = "";
@@ -52,16 +51,17 @@ template<class T> class CommandDispatcher
             }
         }
         if(name != "") {
-            ret = Dispatch(name, args);
+            ret = Dispatch(name, args, context);
         }
         return ret;
     }
 
-    eStatus_t Dispatch (std::string &name, std::vector<std::string> &args) {
+   private:
+    eStatus_t Dispatch (std::string &name, std::vector<std::string> &args, T &context) {
         eStatus_t ret = eStatus_GeneralError;
         typename StorageType::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair != map_.end()) {
-            ret = map_[name]->Execute(context_, args);
+            ret = map_[name]->Execute(context, args);
 
         } else {
             std::cout << "This command is not present in the system!" << std::endl;
@@ -69,7 +69,6 @@ template<class T> class CommandDispatcher
         return ret;
     }
 
-   private:
     std::string FindString (std::string &s, std::string &del) {
         std::string a;
         int end = s.find(del);
@@ -77,6 +76,9 @@ template<class T> class CommandDispatcher
             a = s.substr(0, end);
             s.erase(s.begin(), s.begin() + end + del.length());
         } else {
+            if(s.back() == '\n') {
+                s.pop_back();
+            }
             a = s;
             s = "";
         }
@@ -84,7 +86,6 @@ template<class T> class CommandDispatcher
     }
 
     StorageType map_;
-    T &context_;
 };
 
 #endif /*_PARSER_H__*/

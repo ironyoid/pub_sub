@@ -13,6 +13,7 @@ namespace ErrorCodes {
         eStatus_Ok = 0,
         eStatus_WrongArgsNum,
         eStatus_GeneralError,
+        eStatus_ElementExistsError,
     } eStatus_t;
 } // namespace ErrorCodes
 

@@ -19,6 +19,7 @@ using namespace ErrorCodes;
 using namespace Commands;
 
 class Broker;
+struct ContextContainer;
 
 class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
 {
@@ -27,21 +28,26 @@ class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
 
     static pointer Create (const boost::asio::any_io_executor &io_context,
                            Broker &broker,
-                           CommandDispatcher<Broker> &parser);
+                           CommandDispatcher<ContextContainer> &parser);
     tcp::socket &Socket ();
     void Start ();
+    ~TcpConnection();
+
+    std::string name;
 
    private:
-    TcpConnection(const boost::asio::any_io_executor &io_context, Broker &broker, CommandDispatcher<Broker> &parser);
+    TcpConnection(const boost::asio::any_io_executor &io_context,
+                  Broker &broker,
+                  CommandDispatcher<ContextContainer> &parser);
 
     void HandleWrite (const boost::system::error_code & /*error*/, size_t /*bytes_transferred*/);
     void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
 
     Broker &broker_;
-    CommandDispatcher<Broker> &parser_;
+    std::vector<std::string> topics_;
+    CommandDispatcher<ContextContainer> &parser_;
     tcp::socket socket_;
     boost::asio::streambuf message_;
-    std::string name_;
 };
 
 class Broker
@@ -56,18 +62,18 @@ class Broker
     size_t GetNumberOfSubscribers (std::string &topic);
     eStatus_t Subscribe (std::string &topic, ElementType element);
     eStatus_t Unsubscribe (std::string &topic, ElementType element);
+    void PrintMap (void);
 
    private:
     StorageType storage_;
 };
 
 struct ContextContainer {
-    ContextContainer(Broker &broker) : broker(broker) {
+    ContextContainer(Broker &broker, TcpConnection::pointer ptr) : broker(broker), ptr(ptr) {
     }
     TcpConnection::pointer ptr;
     Broker &broker;
 };
-
 class TcpServer
 {
    public:

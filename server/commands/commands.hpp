@@ -21,6 +21,7 @@ namespace Commands {
             if(args.size() == args_num) {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
+                context.ptr.get()->name = args[0];
                 ret = eStatus_Ok;
             } else {
                 ret = eStatus_WrongArgsNum;
@@ -40,6 +41,7 @@ namespace Commands {
             if(args.size() >= args_num) {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
+                cout << "user name: " << context.ptr.get()->name << endl;
                 ret = eStatus_Ok;
             } else {
                 ret = eStatus_WrongArgsNum;
@@ -58,7 +60,10 @@ namespace Commands {
             if(args.size() == args_num) {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
-                ret = eStatus_Ok;
+                ret = context.broker.Subscribe(args[0], context.ptr);
+                if(eStatus_Ok == ret) {
+                    context.topics.push_back(args[0]);
+                }
             } else {
                 ret = eStatus_WrongArgsNum;
             }
@@ -76,7 +81,7 @@ namespace Commands {
             if(args.size() == args_num) {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
-                ret = eStatus_Ok;
+                ret = context.broker.Unsubscribe(args[0], context.ptr);
             } else {
                 ret = eStatus_WrongArgsNum;
             }
