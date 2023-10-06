@@ -2,7 +2,11 @@
 
 using namespace ErrorCodes;
 
-TcpClient::TcpClient(std::string &addr) : socket_(io_context), addr_(addr){};
+TcpClient::pointer TcpClient::Create(const std::string &addr) {
+    return pointer(new TcpClient(addr));
+}
+
+TcpClient::TcpClient(const std::string &addr) : socket_(io_context), addr_(addr){};
 
 eStatus_t TcpClient::Connect(uint16_t port, std::string &name) {
     eStatus_t ret = eStatus_GeneralError;
@@ -29,10 +33,9 @@ void TcpClient::StartRead(void) {
     async_read_until(socket_,
                      message_,
                      '\n',
-                     boost::bind(&TcpClient::HandleRead,
-                                 this,
-                                 boost::asio::placeholders::error,
-                                 boost::asio::placeholders::bytes_transferred));
+                     [self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
+                         self->HandleRead(error, bytes_transferred);
+                     });
 }
 
 void TcpClient::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
@@ -45,7 +48,7 @@ void TcpClient::HandleRead(const boost::system::error_code &error, size_t bytes_
             messageP = ss.str();
         }
         std::cout << messageP;
-        io_context.post([&] { StartRead(); });
+        io_context.post([self = shared_from_this()] { self->StartRead(); });
     } else {
     }
 }

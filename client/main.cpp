@@ -9,72 +9,70 @@
 #include "parser.hpp"
 #include "commands.hpp"
 #include "tcp_client.hpp"
+#include <boost/asio/posix/stream_descriptor.hpp>
 
 using std::cout;
 using std::endl;
 
-class KeyBoardRoutine
+class KeyBoardRoutine : public boost::enable_shared_from_this<KeyBoardRoutine>
 {
    public:
-    KeyBoardRoutine(TcpClient &client, CommandDispatcher<TcpClient> &dispatcher, uint32_t period) :
-        dispatcher_(dispatcher),
-        client_(client),
-        timer_(client_.io_context, boost::posix_time::milliseconds(period)),
-        period_(period) {
+    using pointer = boost::shared_ptr<KeyBoardRoutine>;
+
+    static KeyBoardRoutine::pointer Create (TcpClient &client,
+                                            CommandDispatcher<TcpClient> &dispatcher,
+                                            uint32_t period) {
+        return pointer(new KeyBoardRoutine(client, dispatcher, period));
     }
 
     void Start (void) {
-        timer_.cancel();
-        timer_.expires_from_now(boost::posix_time::milliseconds(period_));
-        timer_.async_wait([this] (const boost::system::error_code &error) {
-            if(error != boost::asio::error::operation_aborted) {
-                this->Handler();
-            }
-        });
+        async_read_until(
+            input_,
+            message_,
+            '\n',
+            [self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
+                self->HandleRead(error, bytes_transferred);
+            });
     }
 
    private:
-    void Handler (void) {
-        ProcessKeyboard();
+    KeyBoardRoutine(TcpClient &client, CommandDispatcher<TcpClient> &dispatcher, uint32_t period) :
+        dispatcher_(dispatcher),
+        client_(client),
+        period_(period),
+        input_(client.io_context, ::dup(STDIN_FILENO)) {
+    }
+
+    void HandleRead (const boost::system::error_code &error, size_t bytes_transferred) {
+        std::string messageP;
+        {
+            std::stringstream ss;
+            ss << &message_;
+            ss.flush();
+            messageP = ss.str();
+        }
+        eStatus_t status = dispatcher_.ParseRawString(messageP, client_);
+        switch(status) {
+            case ErrorCodes::eStatus_Ok:
+                cout << "Comand has been executed successfully" << endl;
+                break;
+            case ErrorCodes::eStatus_WrongArgsNum:
+                cout << "Wrong number of command parametrs" << endl;
+                break;
+            case ErrorCodes::eStatus_GeneralError:
+                cout << "Unknown error" << endl;
+                break;
+            default:
+                break;
+        }
         Start();
     }
 
-    void ProcessKeyboard (void) {
-        std::string rx_line(1024, ' ');
-        char buf[1024];
-        std::cin.readsome(buf, 1024);
-        std::string in_line(buf);
-
-        // bool cinready = std::cin.peek() != EOF;
-        // if(cinready) {
-        //     std::getline(std::cin, in_line);
-        // } else {
-        //     return;
-        // }
-        if(in_line != "") {
-            eStatus_t status = dispatcher_.ParseRawString(in_line, client_);
-            switch(status) {
-                case ErrorCodes::eStatus_Ok:
-                    cout << "Comand has been executed successfully" << endl;
-                    break;
-                case ErrorCodes::eStatus_WrongArgsNum:
-                    cout << "Wrong number of command parametrs" << endl;
-                    break;
-                case ErrorCodes::eStatus_GeneralError:
-                    cout << "Unknown error" << endl;
-                    break;
-                default:
-                    break;
-            }
-
-            in_line = "";
-        }
-    }
-
+    boost::asio::posix::stream_descriptor input_;
     CommandDispatcher<TcpClient> &dispatcher_;
     TcpClient &client_;
     uint32_t period_;
-    boost::asio::deadline_timer timer_;
+    boost::asio::streambuf message_;
 };
 
 bool CheckAddrArgument (std::vector<std::string> args) {
@@ -108,14 +106,11 @@ int main (int argc, char *argv[]) {
 
     std::vector<std::string> arguments(argv + 1, argv + argc);
     if(CheckAddrArgument(arguments)) {
-        TcpClient client(arguments[0]);
-        KeyBoardRoutine keyboard(client, cmd_dispatcher, 10);
-        keyboard.Start();
-        client.StartRead();
-        client.io_context.run();
-        //std::thread t([&] { client.io_context.run(); });
-        //client.io_context.run();
-        //t.join();
+        TcpClient::pointer client = TcpClient::Create(arguments[0]);
+        KeyBoardRoutine::pointer keyboard = KeyBoardRoutine::Create(*client, cmd_dispatcher, 10);
+        keyboard->Start();
+        client->StartRead();
+        client->io_context.run();
         ret_code = EXIT_SUCCESS;
     }
     return ret_code;

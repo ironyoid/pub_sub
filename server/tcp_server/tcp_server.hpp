@@ -42,6 +42,9 @@ class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
     TcpConnection(const boost::asio::any_io_executor &io_context,
                   Broker &broker,
                   CommandDispatcher<ContextContainer> &parser);
+    /* Do not copy! */
+    TcpConnection(const TcpConnection &) = delete;
+    void operator=(const TcpConnection &) = delete;
 
     void HandleWrite (const boost::system::error_code & /*error*/, size_t /*bytes_transferred*/);
     void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
@@ -74,6 +77,9 @@ class Broker
     void Print (void);
 
    private:
+    /* Do not copy! */
+    Broker(const Broker &) = delete;
+    void operator=(const Broker &) = delete;
     StorageType storage_;
 };
 
@@ -91,6 +97,9 @@ class TcpServer
    private:
     void StartAccept ();
     void HandleAccept (TcpConnection::pointer new_connection, const boost::system::error_code &error);
+    /* Do not copy! */
+    TcpServer(const TcpServer &) = delete;
+    void operator=(const TcpServer &) = delete;
 
     Broker broker_;
     CommandDispatcher<ContextContainer> parser_;
