@@ -8,6 +8,7 @@
 #include <boost/asio.hpp>
 #include <array>
 #include <map>
+#include <set>
 #include <list>
 #include <vector>
 #include "utils.hpp"
@@ -31,6 +32,8 @@ class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
                            CommandDispatcher<ContextContainer> &parser);
     tcp::socket &Socket ();
     void Start ();
+    void Print (void);
+    void SendMessage (std::string &data);
     ~TcpConnection();
 
     std::string name;
@@ -44,17 +47,22 @@ class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
     void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
 
     Broker &broker_;
-    std::vector<std::string> topics_;
+    std::set<std::string> topics_;
     CommandDispatcher<ContextContainer> &parser_;
     tcp::socket socket_;
     boost::asio::streambuf message_;
+
+    friend class Commands::Connect<ContextContainer>;
+    friend class Commands::Publish<ContextContainer>;
+    friend class Commands::Subscribe<ContextContainer>;
+    friend class Commands::Unsubscribe<ContextContainer>;
 };
 
 class Broker
 {
    public:
     using ElementType = TcpConnection::pointer;
-    using ListType = std::list<ElementType>;
+    using ListType = std::set<ElementType>;
     using StorageType = std::map<std::string, ListType>;
 
     Broker();
@@ -62,7 +70,8 @@ class Broker
     size_t GetNumberOfSubscribers (std::string &topic);
     eStatus_t Subscribe (std::string &topic, ElementType element);
     eStatus_t Unsubscribe (std::string &topic, ElementType element);
-    void PrintMap (void);
+    eStatus_t Notify (std::string &topic, std::string &data);
+    void Print (void);
 
    private:
     StorageType storage_;

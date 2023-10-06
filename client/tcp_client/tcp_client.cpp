@@ -2,7 +2,7 @@
 
 using namespace ErrorCodes;
 
-TcpClient::TcpClient(std::string &addr) : socket_(ios_), addr_(addr){};
+TcpClient::TcpClient(std::string &addr) : socket_(io_context), addr_(addr){};
 
 eStatus_t TcpClient::Connect(uint16_t port, std::string &name) {
     eStatus_t ret = eStatus_GeneralError;
@@ -25,11 +25,29 @@ size_t TcpClient::Write(std::string &msg) {
     return ret_size;
 }
 
-size_t TcpClient::Read(std::string &msg) {
-    size_t ret_size = 0;
-    boost::asio::read_until(socket_, boost::asio::dynamic_buffer(msg), '\n');
-    ret_size = msg.size();
-    return ret_size;
+void TcpClient::StartRead(void) {
+    async_read_until(socket_,
+                     message_,
+                     '\n',
+                     boost::bind(&TcpClient::HandleRead,
+                                 this,
+                                 boost::asio::placeholders::error,
+                                 boost::asio::placeholders::bytes_transferred));
+}
+
+void TcpClient::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
+    if((boost::asio::error::eof != error) && (boost::asio::error::connection_reset != error)) {
+        std::string messageP;
+        {
+            std::stringstream ss;
+            ss << &message_;
+            ss.flush();
+            messageP = ss.str();
+        }
+        std::cout << messageP;
+        io_context.post([&] { StartRead(); });
+    } else {
+    }
 }
 
 void TcpClient::Disconnect(void) {

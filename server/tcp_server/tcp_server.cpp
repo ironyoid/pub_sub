@@ -21,14 +21,9 @@ size_t Broker::GetNumberOfSubscribers(std::string &topic) {
 eStatus_t Broker::Subscribe(std::string &topic, ElementType element) {
     eStatus_t ret = eStatus_GeneralError;
     bool is_exist = false;
-    for(auto n : storage_[topic]) {
-        if(n->name == element->name) {
-            is_exist = true;
-            break;
-        }
-    }
-    if(false == is_exist) {
-        storage_[topic].push_back(element);
+    ListType::const_iterator set_itr = storage_[topic].find(element);
+    if(set_itr == storage_[topic].end()) {
+        storage_[topic].insert(element);
         ret = eStatus_Ok;
     } else {
         ret = eStatus_ElementExistsError;
@@ -38,20 +33,34 @@ eStatus_t Broker::Subscribe(std::string &topic, ElementType element) {
 
 eStatus_t Broker::Unsubscribe(std::string &topic, ElementType element) {
     eStatus_t ret = eStatus_GeneralError;
-    StorageType::const_iterator cmd_pair = storage_.find(topic);
-    if(cmd_pair != storage_.end()) {
-        for(auto itr = storage_[topic].begin(); itr != storage_[topic].end(); itr++) {
-            if(itr->get() == element.get()) {
-                storage_[topic].erase(itr);
-                ret = eStatus_Ok;
-                break;
-            }
+    StorageType::const_iterator map_itr = storage_.find(topic);
+    if(map_itr != storage_.end()) {
+        ListType::const_iterator set_itr = storage_[topic].find(element);
+        if(set_itr != storage_[topic].end()) {
+            storage_[topic].erase(set_itr);
+            ret = eStatus_Ok;
+            /* TODO: Shall we remove topic if there are no more elements in it? */
+        } else {
+            ret = eStatus_ElementExistsError;
         }
     }
     return ret;
 }
 
-void Broker::PrintMap(void) {
+eStatus_t Broker::Notify(std::string &topic, std::string &data) {
+    eStatus_t ret = eStatus_GeneralError;
+    StorageType::const_iterator map_itr = storage_.find(topic);
+    if(map_itr != storage_.end()) {
+        for(const auto &n : storage_[topic]) {
+            cout << "send msg to: " << n->name << endl;
+            n->SendMessage(data);
+        }
+        ret = eStatus_Ok;
+    }
+    return ret;
+}
+
+void Broker::Print(void) {
     for(auto n : storage_) {
         cout << "[" << n.first << " ]: ";
         for(auto k : n.second) {
@@ -95,7 +104,8 @@ TcpConnection::TcpConnection(const boost::asio::any_io_executor &io_context,
     name() {
 }
 
-void TcpConnection::HandleWrite(const boost::system::error_code & /*error*/, size_t /*bytes_transferred*/) {
+void TcpConnection::HandleWrite(const boost::system::error_code &error, size_t bytes_transferred) {
+    cout << "[ " << name << "] byte sent: " << bytes_transferred << endl;
 }
 
 void TcpConnection::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
@@ -107,21 +117,40 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
             ss.flush();
             messageP = ss.str();
         }
+
         ContextContainer context{ broker_, shared_from_this() };
         ErrorCodes::eStatus_t ret = parser_.ParseRawString(messageP, context);
         std::cout << "Status code: " << ret << std::endl;
-        broker_.PrintMap();
-
-        boost::asio::async_write(socket_,
-                                 boost::asio::buffer(messageP),
-                                 boost::bind(&TcpConnection::HandleWrite,
-                                             shared_from_this(),
-                                             boost::asio::placeholders::error,
-                                             boost::asio::placeholders::bytes_transferred));
+        broker_.Print();
+        Print();
         Start();
+
     } else {
+        for(auto n : topics_) {
+            broker_.Unsubscribe(n, shared_from_this());
+        }
+        topics_.erase(topics_.begin(), topics_.end());
         std::cout << "Error: Client has disconnected" << std::endl;
+        broker_.Print();
+        Print();
     }
+}
+
+void TcpConnection::Print(void) {
+    std::cout << "[" << name << "]: ";
+    for(auto n : topics_) {
+        std::cout << n << ", ";
+    }
+    std::cout << std::endl;
+}
+
+void TcpConnection::SendMessage(std::string &data) {
+    boost::asio::async_write(socket_,
+                             boost::asio::buffer(data),
+                             boost::bind(&TcpConnection::HandleWrite,
+                                         shared_from_this(),
+                                         boost::asio::placeholders::error,
+                                         boost::asio::placeholders::bytes_transferred));
 }
 
 TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :

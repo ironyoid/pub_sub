@@ -7,20 +7,25 @@
 #include <map>
 #include <vector>
 #include "utils.hpp"
+#include <boost/bind.hpp>
 
 using namespace ErrorCodes;
 
 class TcpClient
 {
    public:
-    TcpClient(std::string &addr);
+    explicit TcpClient(std::string &addr);
     eStatus_t Connect (uint16_t port, std::string &name);
     size_t Write (std::string &msg);
-    size_t Read (std::string &msg);
+    void StartRead (void);
     void Disconnect (void);
 
+    boost::asio::io_service io_context;
+
    private:
+    void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
+
+    boost::asio::streambuf message_;
     std::string addr_;
-    boost::asio::io_service ios_;
     boost::asio::ip::tcp::socket socket_;
 };

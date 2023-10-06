@@ -41,7 +41,13 @@ namespace Commands {
             if(args.size() >= args_num) {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
-                cout << "user name: " << context.ptr.get()->name << endl;
+                std::string tmp = "";
+                for(auto i = args.begin() + 1; i != args.end(); i++) {
+                    tmp = tmp + " " + *i;
+                }
+                tmp = tmp + "\n";
+                std::cout << "Res string: " << tmp << endl;
+                context.broker.Notify(args[0], tmp);
                 ret = eStatus_Ok;
             } else {
                 ret = eStatus_WrongArgsNum;
@@ -62,7 +68,7 @@ namespace Commands {
                      << " with " << args.size() << " agrs" << endl;
                 ret = context.broker.Subscribe(args[0], context.ptr);
                 if(eStatus_Ok == ret) {
-                    context.topics.push_back(args[0]);
+                    context.ptr.get()->topics_.insert(args[0]);
                 }
             } else {
                 ret = eStatus_WrongArgsNum;
@@ -82,6 +88,9 @@ namespace Commands {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
                 ret = context.broker.Unsubscribe(args[0], context.ptr);
+                if(eStatus_Ok == ret) {
+                    context.ptr.get()->topics_.erase(args[0]);
+                }
             } else {
                 ret = eStatus_WrongArgsNum;
             }
