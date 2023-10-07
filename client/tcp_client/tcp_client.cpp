@@ -1,18 +1,17 @@
 #include "tcp_client.hpp"
 #include "keyboard.hpp"
+#include "utils.hpp"
+#include <_types/_uint16_t.h>
 
 using namespace ErrorCodes;
 
-TcpConnection::pointer TcpConnection::Create(boost::asio::io_service &io_service,
-                                             const std::string &addr,
-                                             KeyBoardRoutine &keyboard) {
-    return pointer(new TcpConnection(io_service, addr, keyboard));
+TcpConnection::pointer TcpConnection::Create(boost::asio::io_service &io_service, const std::string &addr) {
+    return pointer(new TcpConnection(io_service, addr));
 }
 
-TcpConnection::TcpConnection(boost::asio::io_service &io_service, const std::string &addr, KeyBoardRoutine &keyboard) :
+TcpConnection::TcpConnection(boost::asio::io_service &io_service, const std::string &addr) :
     socket_(io_service),
-    addr_(addr),
-    keyboard_(keyboard){};
+    addr_(addr){};
 
 eStatus_t TcpConnection::Connect(uint16_t port, const std::string &name) {
     name_ = name;
@@ -57,7 +56,6 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
         std::cout << messageP;
         Start();
     } else {
-        keyboard_.state = KeyBoardRoutine::eKeyboardState_Connect;
         std::cout << name_ << " Connection error!" << std::endl;
     }
 }
@@ -67,13 +65,22 @@ void TcpConnection::Disconnect(void) {
 }
 
 TcpConnection::~TcpConnection() {
-    keyboard_.state = KeyBoardRoutine::eKeyboardState_Connect;
     std::cout << name_ << " has been deleted!" << std::endl;
 }
 
 TcpClient::TcpClient(boost::asio::io_service &io_service, std::string &addr) : io_service_(io_service), addr_(addr) {
 }
 
-TcpConnection::pointer TcpClient::Start(KeyBoardRoutine &keyboard) {
-    return TcpConnection::Create(io_service_, addr_, keyboard);
+eStatus_t TcpClient::Connect(uint16_t port, const std::string &name) {
+    eStatus_t ret = eStatus_GeneralError;
+    TcpConnection::pointer ptr = TcpConnection::Create(io_service_, addr_);
+    if(eStatus_Ok == ptr->Connect(port, name)) {
+        std::string tmp = "CONNECT " + name + "\n";
+        if(ptr->Write(tmp) == tmp.size()) {
+            ptr->Start();
+            weak_connection = ptr;
+            ret = eStatus_Ok;
+        }
+    }
+    return ret;
 }

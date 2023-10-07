@@ -36,12 +36,12 @@ bool CheckAddrArgument (std::vector<std::string> args) {
 
 int main (int argc, char *argv[]) {
     int ret_code = EXIT_FAILURE;
-    Commands::Connect<TcpConnection> connect;
-    Commands::Disconnect<TcpConnection> disconnect;
-    Commands::Publish<TcpConnection> publish;
-    Commands::Subscribe<TcpConnection> subscribe;
-    Commands::Unsubscribe<TcpConnection> unsubscribe;
-    CommandDispatcher<TcpConnection> cmd_dispatcher{};
+    Commands::Connect<TcpClient> connect;
+    Commands::Disconnect<TcpClient> disconnect;
+    Commands::Publish<TcpClient> publish;
+    Commands::Subscribe<TcpClient> subscribe;
+    Commands::Unsubscribe<TcpClient> unsubscribe;
+    CommandDispatcher<TcpClient> cmd_dispatcher{};
 
     cmd_dispatcher.AddCommand("CONNECT", connect);
     cmd_dispatcher.AddCommand("DISCONNECT", disconnect);

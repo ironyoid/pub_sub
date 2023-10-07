@@ -21,18 +21,16 @@ class KeyBoardRoutine : public boost::enable_shared_from_this<KeyBoardRoutine>
 
     static KeyBoardRoutine::pointer Create (boost::asio::io_service &io_service,
                                             TcpClient &client,
-                                            CommandDispatcher<TcpConnection> &dispatcher);
+                                            CommandDispatcher<TcpClient> &dispatcher);
     void Start (void);
     eKeyboardState_t state;
 
    private:
-    KeyBoardRoutine(boost::asio::io_service &io_service,
-                    TcpClient &client,
-                    CommandDispatcher<TcpConnection> &dispatcher);
+    KeyBoardRoutine(boost::asio::io_service &io_service, TcpClient &client, CommandDispatcher<TcpClient> &dispatcher);
     void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
 
     boost::asio::posix::stream_descriptor input_;
-    CommandDispatcher<TcpConnection> &dispatcher_;
+    CommandDispatcher<TcpClient> &dispatcher_;
     TcpConnection::weak_pointer client_ptr_;
     TcpClient &client_;
     boost::asio::streambuf message_;

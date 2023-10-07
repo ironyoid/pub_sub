@@ -27,12 +27,7 @@ namespace Commands {
                 uint16_t port = 0;
                 if(Utils::GetPortFromStr(args[0], port)) {
                     cout << "port = " << port << endl;
-                    if(eStatus_Ok == context.Connect(port, args[1])) {
-                        std::string tmp = NAME + " " + args[1] + "\n";
-                        if(context.Write(tmp) == tmp.size()) {
-                            ret = eStatus_Ok;
-                        }
-                    }
+                    ret = context.Connect(port, args[1]);
                 }
             } else {
                 ret = eStatus_WrongArgsNum;
@@ -52,7 +47,8 @@ namespace Commands {
             if(args.size() == args_num) {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
-                context.Disconnect();
+                auto shr_tmp = context.weak_connection.lock();
+                shr_tmp->Disconnect();
                 ret = eStatus_Ok;
             } else {
                 ret = eStatus_WrongArgsNum;
@@ -77,7 +73,8 @@ namespace Commands {
                 }
                 tmp = tmp + "\n";
 
-                if(context.Write(tmp) == tmp.size()) {
+                auto shr_tmp = context.weak_connection.lock();
+                if(shr_tmp->Write(tmp) == tmp.size()) {
                     ret = eStatus_Ok;
                 }
             } else {
@@ -98,7 +95,8 @@ namespace Commands {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
                 std::string tmp = NAME + " " + args[0] + "\n";
-                if(context.Write(tmp) == tmp.size()) {
+                auto shr_tmp = context.weak_connection.lock();
+                if(shr_tmp->Write(tmp) == tmp.size()) {
                     ret = eStatus_Ok;
                 }
             } else {
@@ -119,7 +117,8 @@ namespace Commands {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
                 std::string tmp = NAME + " " + args[0] + "\n";
-                if(context.Write(tmp) == tmp.size()) {
+                auto shr_tmp = context.weak_connection.lock();
+                if(shr_tmp->Write(tmp) == tmp.size()) {
                     ret = eStatus_Ok;
                 }
             } else {

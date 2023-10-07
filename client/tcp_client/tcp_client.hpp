@@ -23,7 +23,7 @@ class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
    public:
     using pointer = boost::shared_ptr<TcpConnection>;
     using weak_pointer = boost::weak_ptr<TcpConnection>;
-    static pointer Create (boost::asio::io_service &io_service, const std::string &addr, KeyBoardRoutine &keyboard);
+    static pointer Create (boost::asio::io_service &io_service, const std::string &addr);
     eStatus_t Connect (uint16_t port, const std::string &name);
     size_t Write (const std::string &msg);
     void Start (void);
@@ -31,7 +31,7 @@ class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
     ~TcpConnection();
 
    private:
-    explicit TcpConnection(boost::asio::io_service &io_service, const std::string &addr, KeyBoardRoutine &keyboard);
+    explicit TcpConnection(boost::asio::io_service &io_service, const std::string &addr);
     void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
     /* Do not copy! */
     TcpConnection(const TcpConnection &) = delete;
@@ -40,14 +40,14 @@ class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
     std::string name_;
     std::string addr_;
     boost::asio::ip::tcp::socket socket_;
-    KeyBoardRoutine &keyboard_;
 };
 
 class TcpClient
 {
    public:
     TcpClient(boost::asio::io_service &io_service, std::string &addr);
-    TcpConnection::pointer Start (KeyBoardRoutine &keyboard);
+    eStatus_t Connect (uint16_t port, const std::string &name);
+    TcpConnection::weak_pointer weak_connection;
 
    private:
     boost::asio::io_service &io_service_;
