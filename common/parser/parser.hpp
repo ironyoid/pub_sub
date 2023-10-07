@@ -25,11 +25,11 @@ template<class T> class CommandDispatcher
 
     };
 
-    eStatus_t AddCommand (std::string name, ICommand<T> *command) {
+    eStatus_t AddCommand (std::string name, ICommand<T> &command) {
         eStatus_t ret = eStatus_GeneralError;
         typename StorageType::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair == map_.end()) {
-            map_[name] = command;
+            map_[name] = &command;
             ret = eStatus_Ok;
 
         } else {
@@ -56,19 +56,6 @@ template<class T> class CommandDispatcher
         return ret;
     }
 
-   private:
-    eStatus_t Dispatch (std::string &name, std::vector<std::string> &args, T &context) {
-        eStatus_t ret = eStatus_GeneralError;
-        typename StorageType::const_iterator cmd_pair = map_.find(name);
-        if(cmd_pair != map_.end()) {
-            ret = map_[name]->Execute(context, args);
-
-        } else {
-            std::cout << "This command is not present in the system!" << std::endl;
-        }
-        return ret;
-    }
-
     std::string FindString (std::string &s, std::string &del) {
         std::string a;
         int end = s.find(del);
@@ -83,6 +70,19 @@ template<class T> class CommandDispatcher
             s = "";
         }
         return a;
+    }
+
+   private:
+    eStatus_t Dispatch (std::string &name, std::vector<std::string> &args, T &context) {
+        eStatus_t ret = eStatus_GeneralError;
+        typename StorageType::const_iterator cmd_pair = map_.find(name);
+        if(cmd_pair != map_.end()) {
+            ret = map_[name]->Execute(context, args);
+
+        } else {
+            std::cout << "This command is not present in the system!" << std::endl;
+        }
+        return ret;
     }
 
     StorageType map_;

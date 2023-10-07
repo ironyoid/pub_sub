@@ -80,6 +80,9 @@ tcp::socket &TcpConnection::Socket() {
 }
 
 TcpConnection::~TcpConnection() {
+    for(auto n : topics_) {
+        broker_.Unsubscribe(n, shared_from_this());
+    }
     std::cout << name << " has been deleted!" << std::endl;
 }
 
@@ -126,7 +129,6 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
         for(auto n : topics_) {
             broker_.Unsubscribe(n, shared_from_this());
         }
-        topics_.erase(topics_.begin(), topics_.end());
         std::cout << "Error: Client has disconnected" << std::endl;
         broker_.Print();
         Print();
@@ -158,10 +160,10 @@ TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :
     pub_cmd(),
     sub_cmd(),
     unsub_cmd() {
-    parser_.AddCommand("CONNECT", &name_cmd);
-    parser_.AddCommand("PUBLISH", &pub_cmd);
-    parser_.AddCommand("SUBSCRIBE", &sub_cmd);
-    parser_.AddCommand("UNSUBSCRIBE", &unsub_cmd);
+    parser_.AddCommand("CONNECT", name_cmd);
+    parser_.AddCommand("PUBLISH", pub_cmd);
+    parser_.AddCommand("SUBSCRIBE", sub_cmd);
+    parser_.AddCommand("UNSUBSCRIBE", unsub_cmd);
     StartAccept();
 }
 

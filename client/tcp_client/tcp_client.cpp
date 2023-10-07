@@ -1,14 +1,21 @@
 #include "tcp_client.hpp"
+#include "keyboard.hpp"
 
 using namespace ErrorCodes;
 
-TcpClient::pointer TcpClient::Create(boost::asio::io_service &io_service, const std::string &addr) {
-    return pointer(new TcpClient(io_service, addr));
+TcpConnection::pointer TcpConnection::Create(boost::asio::io_service &io_service,
+                                             const std::string &addr,
+                                             KeyBoardRoutine &keyboard) {
+    return pointer(new TcpConnection(io_service, addr, keyboard));
 }
 
-TcpClient::TcpClient(boost::asio::io_service &io_service, const std::string &addr) : socket_(io_service), addr_(addr){};
+TcpConnection::TcpConnection(boost::asio::io_service &io_service, const std::string &addr, KeyBoardRoutine &keyboard) :
+    socket_(io_service),
+    addr_(addr),
+    keyboard_(keyboard){};
 
-eStatus_t TcpClient::Connect(uint16_t port, const std::string &name) {
+eStatus_t TcpConnection::Connect(uint16_t port, const std::string &name) {
+    name_ = name;
     eStatus_t ret = eStatus_GeneralError;
     boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string(addr_), port);
     try {
@@ -17,11 +24,10 @@ eStatus_t TcpClient::Connect(uint16_t port, const std::string &name) {
     } catch(std::exception &e) {
         std::cerr << "Exception: " << e.what() << "\n";
     }
-
     return ret;
 }
 
-size_t TcpClient::Write(const std::string &msg) {
+size_t TcpConnection::Write(const std::string &msg) {
     size_t ret_size = 0;
     ret_size = boost::asio::write(socket_,
                                   boost::asio::buffer(msg.c_str(), msg.size()),
@@ -29,7 +35,7 @@ size_t TcpClient::Write(const std::string &msg) {
     return ret_size;
 }
 
-void TcpClient::Start(void) {
+void TcpConnection::Start(void) {
     async_read_until(socket_,
                      message_,
                      '\n',
@@ -38,8 +44,10 @@ void TcpClient::Start(void) {
                      });
 }
 
-void TcpClient::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
-    if((boost::asio::error::eof != error) && (boost::asio::error::connection_reset != error)) {
+void TcpConnection::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
+    std::cout << "ERROR: " << error << std::endl;
+    if((boost::asio::error::eof != error) && (boost::asio::error::connection_reset != error)
+       && (boost::asio::error::operation_aborted != error)) {
         std::string messageP;
         std::stringstream ss;
         ss << &message_;
@@ -49,9 +57,23 @@ void TcpClient::HandleRead(const boost::system::error_code &error, size_t bytes_
         std::cout << messageP;
         Start();
     } else {
+        keyboard_.state = KeyBoardRoutine::eKeyboardState_Connect;
+        std::cout << name_ << " Connection error!" << std::endl;
     }
 }
 
-void TcpClient::Disconnect(void) {
+void TcpConnection::Disconnect(void) {
     socket_.close();
+}
+
+TcpConnection::~TcpConnection() {
+    keyboard_.state = KeyBoardRoutine::eKeyboardState_Connect;
+    std::cout << name_ << " has been deleted!" << std::endl;
+}
+
+TcpClient::TcpClient(boost::asio::io_service &io_service, std::string &addr) : io_service_(io_service), addr_(addr) {
+}
+
+TcpConnection::pointer TcpClient::Start(KeyBoardRoutine &keyboard) {
+    return TcpConnection::Create(io_service_, addr_, keyboard);
 }

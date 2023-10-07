@@ -27,29 +27,34 @@ bool CheckAddrArgument (std::vector<std::string> args) {
     }
     return ret;
 }
+// void Test (boost::asio::io_service &io_service, std::string &arg, CommandDispatcher<TcpClient> &cmd_dispatcher) {
+//     TcpClient::pointer client = TcpClient::Create(io_service, arg);
+//     KeyBoardRoutine::pointer keyboard = KeyBoardRoutine::Create(io_service, client, cmd_dispatcher, 10);
+//     client->Start();
+//     keyboard->Start();
+// }
 
 int main (int argc, char *argv[]) {
     int ret_code = EXIT_FAILURE;
-    Commands::Connect<TcpClient> connect;
-    Commands::Disconnect<TcpClient> disconnect;
-    Commands::Publish<TcpClient> publish;
-    Commands::Subscribe<TcpClient> subscribe;
-    Commands::Unsubscribe<TcpClient> unsubscribe;
-    CommandDispatcher<TcpClient> cmd_dispatcher{};
+    Commands::Connect<TcpConnection> connect;
+    Commands::Disconnect<TcpConnection> disconnect;
+    Commands::Publish<TcpConnection> publish;
+    Commands::Subscribe<TcpConnection> subscribe;
+    Commands::Unsubscribe<TcpConnection> unsubscribe;
+    CommandDispatcher<TcpConnection> cmd_dispatcher{};
 
-    cmd_dispatcher.AddCommand("CONNECT", &connect);
-    cmd_dispatcher.AddCommand("DISCONNECT", &disconnect);
-    cmd_dispatcher.AddCommand("PUBLISH", &publish);
-    cmd_dispatcher.AddCommand("SUBSCRIBE", &subscribe);
-    cmd_dispatcher.AddCommand("UNSUBSCRIBE", &unsubscribe);
+    cmd_dispatcher.AddCommand("CONNECT", connect);
+    cmd_dispatcher.AddCommand("DISCONNECT", disconnect);
+    cmd_dispatcher.AddCommand("PUBLISH", publish);
+    cmd_dispatcher.AddCommand("SUBSCRIBE", subscribe);
+    cmd_dispatcher.AddCommand("UNSUBSCRIBE", unsubscribe);
 
     std::vector<std::string> arguments(argv + 1, argv + argc);
     if(CheckAddrArgument(arguments)) {
         boost::asio::io_service io_service;
-        TcpClient::pointer client = TcpClient::Create(io_service, arguments[0]);
-        KeyBoardRoutine::pointer keyboard = KeyBoardRoutine::Create(io_service, *client, cmd_dispatcher, 10);
+        TcpClient client(io_service, arguments[0]);
+        KeyBoardRoutine::pointer keyboard = KeyBoardRoutine::Create(io_service, client, cmd_dispatcher);
         keyboard->Start();
-        client->Start();
         io_service.run();
         ret_code = EXIT_SUCCESS;
     }

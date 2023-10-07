@@ -10,10 +10,12 @@ namespace Utils {
 
 namespace ErrorCodes {
     typedef enum {
-        eStatus_Ok = 0,
+        eStatus_Idle = 0,
+        eStatus_Ok,
         eStatus_WrongArgsNum,
         eStatus_GeneralError,
         eStatus_ElementExistsError,
+        eStatus_LostConnection,
     } eStatus_t;
 } // namespace ErrorCodes
 
