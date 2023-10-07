@@ -27,19 +27,19 @@ class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
    public:
     using pointer = boost::shared_ptr<TcpConnection>;
 
-    static pointer Create (const boost::asio::any_io_executor &io_context,
+    static pointer Create (const boost::asio::any_io_executor &io_service,
                            Broker &broker,
                            CommandDispatcher<ContextContainer> &parser);
     tcp::socket &Socket ();
     void Start ();
     void Print (void);
-    void SendMessage (std::string &data);
+    void SendMessage (const std::string &data);
     ~TcpConnection();
 
     std::string name;
 
    private:
-    TcpConnection(const boost::asio::any_io_executor &io_context,
+    TcpConnection(const boost::asio::any_io_executor &io_service,
                   Broker &broker,
                   CommandDispatcher<ContextContainer> &parser);
     /* Do not copy! */
@@ -71,9 +71,9 @@ class Broker
     Broker();
 
     size_t GetNumberOfSubscribers (std::string &topic);
-    eStatus_t Subscribe (std::string &topic, ElementType element);
-    eStatus_t Unsubscribe (std::string &topic, ElementType element);
-    eStatus_t Notify (std::string &topic, std::string &data);
+    eStatus_t Subscribe (const std::string &topic, ElementType element);
+    eStatus_t Unsubscribe (const std::string &topic, ElementType element);
+    eStatus_t Notify (const std::string &topic, const std::string &data);
     void Print (void);
 
    private:

@@ -4,7 +4,7 @@ using boost::bad_lexical_cast;
 using boost::lexical_cast;
 
 namespace Utils {
-    bool GetPortFromStr (std::string &str, uint16_t &port) {
+    bool GetPortFromStr (const std::string &str, uint16_t &port) {
         bool ret = false;
         try {
             int32_t port_32 = lexical_cast<int32_t>(str);

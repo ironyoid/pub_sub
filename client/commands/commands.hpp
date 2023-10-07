@@ -1,4 +1,6 @@
-#pragma once
+#ifndef _COMMANDS_H__
+#define _COMMANDS_H__
+
 #include <iostream>
 #include <string>
 #include <map>
@@ -15,7 +17,7 @@ namespace Commands {
     template<class T> class Connect : public ICommand<T>
     {
        public:
-        eStatus_t Execute (T &client, std::vector<std::string> &args) {
+        eStatus_t Execute (T &client, const std::vector<std::string> &args) {
             const std::string NAME = "CONNECT";
             const size_t args_num = 2;
             eStatus_t ret = eStatus_GeneralError;
@@ -42,7 +44,7 @@ namespace Commands {
     template<class T> class Disconnect : public ICommand<T>
     {
        public:
-        eStatus_t Execute (T &client, std::vector<std::string> &args) {
+        eStatus_t Execute (T &client, const std::vector<std::string> &args) {
             const std::string NAME = "DISCONNECT";
             const size_t args_num = 0;
             cout << "size = " << args.size() << endl;
@@ -62,7 +64,7 @@ namespace Commands {
     template<class T> class Publish : public ICommand<T>
     {
        public:
-        eStatus_t Execute (T &client, std::vector<std::string> &args) {
+        eStatus_t Execute (T &client, const std::vector<std::string> &args) {
             const std::string NAME = "PUBLISH";
             const size_t args_num = 2;
             eStatus_t ret = eStatus_GeneralError;
@@ -88,7 +90,7 @@ namespace Commands {
     template<class T> class Subscribe : public ICommand<T>
     {
        public:
-        eStatus_t Execute (T &client, std::vector<std::string> &args) {
+        eStatus_t Execute (T &client, const std::vector<std::string> &args) {
             const std::string NAME = "SUBSCRIBE";
             const size_t args_num = 1;
             eStatus_t ret = eStatus_GeneralError;
@@ -109,7 +111,7 @@ namespace Commands {
     template<class T> class Unsubscribe : public ICommand<T>
     {
        public:
-        eStatus_t Execute (T &client, std::vector<std::string> &args) {
+        eStatus_t Execute (T &client, const std::vector<std::string> &args) {
             const std::string NAME = "UNSUBSCRIBE";
             const size_t args_num = 1;
             eStatus_t ret = eStatus_GeneralError;
@@ -129,3 +131,5 @@ namespace Commands {
     };
 
 } // namespace Commands
+
+#endif /* _COMMANDS_H__*/

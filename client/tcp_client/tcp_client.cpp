@@ -2,13 +2,13 @@
 
 using namespace ErrorCodes;
 
-TcpClient::pointer TcpClient::Create(const std::string &addr) {
-    return pointer(new TcpClient(addr));
+TcpClient::pointer TcpClient::Create(boost::asio::io_service &io_service, const std::string &addr) {
+    return pointer(new TcpClient(io_service, addr));
 }
 
-TcpClient::TcpClient(const std::string &addr) : socket_(io_context), addr_(addr){};
+TcpClient::TcpClient(boost::asio::io_service &io_service, const std::string &addr) : socket_(io_service), addr_(addr){};
 
-eStatus_t TcpClient::Connect(uint16_t port, std::string &name) {
+eStatus_t TcpClient::Connect(uint16_t port, const std::string &name) {
     eStatus_t ret = eStatus_GeneralError;
     boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string(addr_), port);
     try {
@@ -21,7 +21,7 @@ eStatus_t TcpClient::Connect(uint16_t port, std::string &name) {
     return ret;
 }
 
-size_t TcpClient::Write(std::string &msg) {
+size_t TcpClient::Write(const std::string &msg) {
     size_t ret_size = 0;
     ret_size = boost::asio::write(socket_,
                                   boost::asio::buffer(msg.c_str(), msg.size()),
@@ -29,7 +29,7 @@ size_t TcpClient::Write(std::string &msg) {
     return ret_size;
 }
 
-void TcpClient::StartRead(void) {
+void TcpClient::Start(void) {
     async_read_until(socket_,
                      message_,
                      '\n',
@@ -41,14 +41,13 @@ void TcpClient::StartRead(void) {
 void TcpClient::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
     if((boost::asio::error::eof != error) && (boost::asio::error::connection_reset != error)) {
         std::string messageP;
-        {
-            std::stringstream ss;
-            ss << &message_;
-            ss.flush();
-            messageP = ss.str();
-        }
+        std::stringstream ss;
+        ss << &message_;
+        ss.flush();
+        messageP = ss.str();
+
         std::cout << messageP;
-        io_context.post([self = shared_from_this()] { self->StartRead(); });
+        Start();
     } else {
     }
 }

@@ -5,7 +5,7 @@
 #include <string>
 
 namespace Utils {
-    bool GetPortFromStr (std::string &str, uint16_t &port);
+    bool GetPortFromStr (const std::string &str, uint16_t &port);
 } // namespace Utils
 
 namespace ErrorCodes {

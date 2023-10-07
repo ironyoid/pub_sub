@@ -11,9 +11,7 @@ int main (int argc, char *argv[]) {
     try {
         boost::asio::io_service io_service;
         TcpServer server(io_service, 1936);
-        std::thread t([&] { io_service.run(); });
         io_service.run();
-        t.join();
     } catch(std::exception &e) {
         std::cerr << e.what() << std::endl;
     }

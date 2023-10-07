@@ -13,7 +13,7 @@ template<class T> class ICommand
 {
    public:
     virtual ~ICommand(){};
-    virtual eStatus_t Execute (T &context, std::vector<std::string> &args) = 0;
+    virtual eStatus_t Execute (T &context, const std::vector<std::string> &args) = 0;
 };
 
 template<class T> class CommandDispatcher
