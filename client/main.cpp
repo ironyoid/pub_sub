@@ -1,5 +1,3 @@
-
-
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -11,9 +9,7 @@
 #include "tcp_client.hpp"
 #include "console_input.hpp"
 #include "utils.hpp"
-
-using std::cout;
-using std::endl;
+#include "logs.hpp"
 
 int main (int argc, char *argv[]) {
     int ret_code = EXIT_FAILURE;
@@ -32,7 +28,7 @@ int main (int argc, char *argv[]) {
 
     std::vector<std::string> arguments(argv + 1, argv + argc);
     if(Utils::CheckAddrArgument(arguments)) {
-        cout << "Server IP address: " << arguments[0] << endl;
+        LOG("SYS", "Server IP address: " << arguments[0]);
         boost::asio::io_service io_service;
         TcpClient client(io_service, arguments[0]);
         ConsoleInput::pointer console_routine
@@ -41,7 +37,7 @@ int main (int argc, char *argv[]) {
         io_service.run();
         ret_code = EXIT_SUCCESS;
     } else {
-        cout << "Wrong IP address format!" << endl;
+        LOG("SYS", "Wrong IP address format!");
     }
     return ret_code;
 }

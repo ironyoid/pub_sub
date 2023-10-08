@@ -56,7 +56,7 @@ eStatus_t Broker::Notify(const std::string &topic, const std::string &data) {
     StorageType::const_iterator map_itr = storage_.find(topic);
     if(map_itr != storage_.end()) {
         for(const auto &n : storage_[topic]) {
-            cout << "send msg to: " << n->name << endl;
+            LOG_NO_CONSOLE("SYS", "send msg to: " << n->name);
             n->SendMessage("Topic: " + topic + " Data: " + data);
         }
         ret = eStatus_Ok;
@@ -65,10 +65,10 @@ eStatus_t Broker::Notify(const std::string &topic, const std::string &data) {
 }
 
 void Broker::Print(void) {
-    cout << endl << "[BROKER MAP size: " << storage_.size() << "]" << endl;
+    cout << "[BROKER MAP size: " << storage_.size() << "]" << endl;
     std::set<ElementType>::iterator itr;
     for(auto n : storage_) {
-        cout << "[" << n.first << " ]: ";
+        cout << "[" << n.first << "]: ";
         std::string tmp{ "" };
         for(itr = n.second.begin(); itr != n.second.end(); itr++) {
             tmp = tmp + (*itr)->name + ", ";
@@ -91,10 +91,10 @@ tcp::socket &TcpConnection::Socket() {
 }
 
 TcpConnection::~TcpConnection() {
+    LOG_NO_CONSOLE("SYS", name << " has been deleted!");
     for(auto n : topics_) {
         broker_.Unsubscribe(n, shared_from_this());
     }
-    std::cout << name << " has been deleted!" << std::endl;
 }
 
 void TcpConnection::Start() {
@@ -133,7 +133,11 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
         Start();
 
     } else {
-        std::cout << "[" << name << "] has been disconnected!" << std::endl;
+        for(auto n : topics_) {
+            broker_.Unsubscribe(n, shared_from_this());
+        }
+        topics_.clear();
+        LOG_NO_CONSOLE("SYS", "[" << name << "] has been disconnected!");
     }
 }
 

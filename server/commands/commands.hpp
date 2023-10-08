@@ -6,6 +6,7 @@
 #include <vector>
 #include "utils.hpp"
 #include "parser.hpp"
+#include "logs.hpp"
 
 namespace Commands {
 
@@ -18,7 +19,7 @@ namespace Commands {
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
                 context.ptr->name = args[0];
-                std::cout << "[" << args[0] << "] has been connected" << std::endl;
+                LOG_NO_CONSOLE("SYS", "[" << args[0] << "] has been connected");
                 ret = eStatus_Ok;
             } else {
                 ret = eStatus_WrongArgsNum;

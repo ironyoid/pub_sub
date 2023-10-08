@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <utils.hpp>
+#include "logs.hpp"
 
 using namespace ErrorCodes;
 
@@ -33,7 +34,7 @@ template<class T> class CommandDispatcher
             map_[name] = &command;
             ret = eStatus_Ok;
         } else {
-            std::cout << "Command already exists!" << std::endl;
+            LOG("SYS", "Command already exists!");
         }
         return ret;
     }
@@ -85,7 +86,7 @@ template<class T> class CommandDispatcher
             ret = map_[name]->Execute(context, args);
 
         } else {
-            std::cout << "This command is not present in the system!" << std::endl;
+            LOG("SYS", "This command is not present in the system!");
         }
         return ret;
     }

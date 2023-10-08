@@ -3,8 +3,7 @@
 #include "tcp_client.hpp"
 #include "utils.hpp"
 #include <iostream>
-using std::cout;
-using std::endl;
+#include <logs.hpp>
 
 ConsoleInput::pointer ConsoleInput::Create(boost::asio::io_service &io_service,
                                            TcpClient client,
@@ -13,10 +12,6 @@ ConsoleInput::pointer ConsoleInput::Create(boost::asio::io_service &io_service,
 }
 
 void ConsoleInput::Start(void) {
-    cout << "["
-         << "SYS"
-         << "]-> ";
-    cout.flush();
     async_read_until(input_,
                      message_,
                      '\n',
@@ -44,25 +39,25 @@ void ConsoleInput::HandleRead(const boost::system::error_code &error, size_t byt
     eStatus_t status = dispatcher_.ParseRawString(messageP, client_);
     switch(status) {
         case ErrorCodes::eStatus_Ok:
-            cout << "Comand has been executed successfully!" << endl;
+            LOG("SYS", "Comand has been executed successfully!");
             break;
         case ErrorCodes::eStatus_WrongArgsNum:
-            cout << "Wrong number of command parametrs!" << endl;
+            LOG("SYS", "Wrong number of command parametrs!");
             break;
         case ErrorCodes::eStatus_GeneralError:
-            cout << "Unknown error!" << endl;
+            LOG("SYS", "Unknown error!");
             break;
         case ErrorCodes::eStatus_LostConnection:
-            cout << "There are no any connections!" << endl;
+            LOG("SYS", "There are no any connections!");
             break;
         case ErrorCodes::eStatus_WrongPort:
-            cout << "Port argument is invalid!" << endl;
+            LOG("SYS", "Port argument is invalid!");
             break;
         case ErrorCodes::eStatus_PortAlreadyInUse:
-            cout << "Port is already in use!" << endl;
+            LOG("SYS", "Port is already in use!");
             break;
         case ErrorCodes::eStatus_ConnectionRefused:
-            cout << "Connection refused!" << endl;
+            LOG("SYS", "Connection refused!");
             break;
 
         default:

@@ -2,6 +2,7 @@
 #include "console_input.hpp"
 #include "utils.hpp"
 #include <_types/_uint16_t.h>
+#include "logs.hpp"
 
 using namespace ErrorCodes;
 
@@ -67,11 +68,12 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
         ss << &message_;
         ss.flush();
         messageP = ss.str();
-        std::cout << "[Message] " << messageP;
+        messageP.pop_back();
+        LOG_ERASE("Message", messageP);
 
         Start();
     } else {
-        std::cout << name_ << " Connection error!" << std::endl;
+        LOG_ERASE("SYS", name_ << " Connection error!");
     }
 }
 
@@ -80,7 +82,7 @@ void TcpConnection::Disconnect(void) {
 }
 
 TcpConnection::~TcpConnection() {
-    std::cout << "[" << name_ << "] Has been closed!" << std::endl;
+    LOG_ERASE("SYS", "[" << name_ << "] Has been closed!");
 }
 
 TcpClient::TcpClient(boost::asio::io_service &io_service, const std::string &addr) :
