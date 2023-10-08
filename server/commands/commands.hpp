@@ -42,8 +42,9 @@ namespace Commands {
             if(args.size() >= args_num) {
                 cout << NAME << " command"
                      << " with " << args.size() << " agrs" << endl;
-                std::string tmp = "";
-                for(auto i = args.begin() + 1; i != args.end(); i++) {
+                std::string tmp = args[1];
+                for(auto i = args.begin() + 2; i != args.end(); i++) {
+                    cout << "[" << *i << "]" << endl;
                     tmp = tmp + " " + *i;
                 }
                 tmp = tmp + "\n";

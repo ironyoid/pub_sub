@@ -52,7 +52,7 @@ eStatus_t Broker::Notify(const std::string &topic, const std::string &data) {
     if(map_itr != storage_.end()) {
         for(const auto &n : storage_[topic]) {
             cout << "send msg to: " << n->name << endl;
-            n->SendMessage(data);
+            n->SendMessage("Topic: " + topic + " Data: " + data);
         }
         ret = eStatus_Ok;
     }
@@ -107,7 +107,6 @@ TcpConnection::TcpConnection(const boost::asio::any_io_executor &io_service,
 }
 
 void TcpConnection::HandleWrite(const boost::system::error_code &error, size_t bytes_transferred) {
-    cout << "[ " << name << "] byte sent: " << bytes_transferred << endl;
 }
 
 void TcpConnection::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
@@ -126,9 +125,9 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
         Start();
 
     } else {
-        for(auto n : topics_) {
-            broker_.Unsubscribe(n, shared_from_this());
-        }
+        // for(auto n : topics_) {
+        //     broker_.Unsubscribe(n, shared_from_this());
+        // }
         std::cout << "Error: Client has disconnected" << std::endl;
         broker_.Print();
         Print();

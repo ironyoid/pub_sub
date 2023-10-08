@@ -1,6 +1,5 @@
 #ifndef _COMMANDS_H__
 #define _COMMANDS_H__
-
 #include <iostream>
 #include <string>
 #include <map>
@@ -8,9 +7,6 @@
 #include "tcp_client.hpp"
 #include "utils.hpp"
 #include "parser.hpp"
-
-using std::cout;
-using std::endl;
 
 namespace Commands {
 
@@ -22,11 +18,8 @@ namespace Commands {
             const size_t args_num = 2;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                cout << NAME << " command"
-                     << " with " << args.size() << " agrs" << endl;
                 uint16_t port = 0;
                 if(Utils::GetPortFromStr(args[0], port)) {
-                    cout << "port = " << port << endl;
                     ret = context.Connect(port, args[1]);
                 }
             } else {
@@ -42,14 +35,9 @@ namespace Commands {
         eStatus_t Execute (T &context, const std::vector<std::string> &args) {
             const std::string NAME = "DISCONNECT";
             const size_t args_num = 0;
-            cout << "size = " << args.size() << endl;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                cout << NAME << " command"
-                     << " with " << args.size() << " agrs" << endl;
-                auto shr_tmp = context.weak_connection.lock();
-                shr_tmp->Disconnect();
-                ret = eStatus_Ok;
+                ret = context.Disconnect();
             } else {
                 ret = eStatus_WrongArgsNum;
             }
@@ -65,17 +53,18 @@ namespace Commands {
             const size_t args_num = 2;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() >= args_num) {
-                cout << NAME << " command"
-                     << " with " << args.size() << " agrs" << endl;
                 std::string tmp = NAME;
                 for(auto n : args) {
                     tmp = tmp + " " + n;
                 }
                 tmp = tmp + "\n";
-
-                auto shr_tmp = context.weak_connection.lock();
-                if(shr_tmp->Write(tmp) == tmp.size()) {
-                    ret = eStatus_Ok;
+                if(false == context.weak_connection.expired()) {
+                    auto shr_tmp = context.weak_connection.lock();
+                    if(shr_tmp->Write(tmp) == tmp.size()) {
+                        ret = eStatus_Ok;
+                    }
+                } else {
+                    ret = eStatus_LostConnection;
                 }
             } else {
                 ret = eStatus_WrongArgsNum;
@@ -92,17 +81,18 @@ namespace Commands {
             const size_t args_num = 1;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                cout << NAME << " command"
-                     << " with " << args.size() << " agrs" << endl;
                 std::string tmp = NAME + " " + args[0] + "\n";
-                auto shr_tmp = context.weak_connection.lock();
-                if(shr_tmp->Write(tmp) == tmp.size()) {
-                    ret = eStatus_Ok;
+                if(false == context.weak_connection.expired()) {
+                    auto shr_tmp = context.weak_connection.lock();
+                    if(shr_tmp->Write(tmp) == tmp.size()) {
+                        ret = eStatus_Ok;
+                    }
+                } else {
+                    ret = eStatus_LostConnection;
                 }
             } else {
                 ret = eStatus_WrongArgsNum;
             }
-
             return ret;
         }
     };
@@ -114,17 +104,18 @@ namespace Commands {
             const size_t args_num = 1;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                cout << NAME << " command"
-                     << " with " << args.size() << " agrs" << endl;
                 std::string tmp = NAME + " " + args[0] + "\n";
-                auto shr_tmp = context.weak_connection.lock();
-                if(shr_tmp->Write(tmp) == tmp.size()) {
-                    ret = eStatus_Ok;
+                if(false == context.weak_connection.expired()) {
+                    auto shr_tmp = context.weak_connection.lock();
+                    if(shr_tmp->Write(tmp) == tmp.size()) {
+                        ret = eStatus_Ok;
+                    }
+                } else {
+                    ret = eStatus_LostConnection;
                 }
             } else {
                 ret = eStatus_WrongArgsNum;
             }
-
             return ret;
         }
     };

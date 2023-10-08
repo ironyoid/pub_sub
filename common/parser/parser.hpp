@@ -1,6 +1,7 @@
 #ifndef _PARSER_H__
 #define _PARSER_H__
 #include <boost/lexical_cast.hpp>
+#include <cstddef>
 #include <iostream>
 #include <string>
 #include <map>
@@ -72,6 +73,10 @@ template<class T> class CommandDispatcher
         return a;
     }
 
+    CommandDispatcher(CommandDispatcher &&moved) {
+        map_ = std::move(moved.map_);
+    }
+
    private:
     eStatus_t Dispatch (std::string &name, std::vector<std::string> &args, T &context) {
         eStatus_t ret = eStatus_GeneralError;
@@ -84,6 +89,10 @@ template<class T> class CommandDispatcher
         }
         return ret;
     }
+
+    /* Do not copy! */
+    CommandDispatcher(const CommandDispatcher &) = delete;
+    void operator=(const CommandDispatcher &) = delete;
 
     StorageType map_;
 };

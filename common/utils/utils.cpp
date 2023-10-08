@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include <boost/asio.hpp>
 
 using boost::bad_lexical_cast;
 using boost::lexical_cast;
@@ -15,6 +16,18 @@ namespace Utils {
             ret = true;
 
         } catch(bad_lexical_cast &) {
+        }
+        return ret;
+    }
+
+    bool CheckAddrArgument (std::vector<std::string> args) {
+        bool ret = false;
+        if(args.size() == 1) {
+            try {
+                boost::asio::ip::address addr = boost::asio::ip::address::from_string(args[0]);
+                ret = true;
+            } catch(std::exception &e) {
+            }
         }
         return ret;
     }

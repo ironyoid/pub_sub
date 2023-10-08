@@ -9,30 +9,11 @@
 #include "parser.hpp"
 #include "commands.hpp"
 #include "tcp_client.hpp"
-#include "keyboard.hpp"
+#include "console_input.hpp"
+#include "utils.hpp"
 
 using std::cout;
 using std::endl;
-
-bool CheckAddrArgument (std::vector<std::string> args) {
-    bool ret = false;
-    if(args.size() == 1) {
-        try {
-            boost::asio::ip::address addr = boost::asio::ip::address::from_string(args[0]);
-            cout << args[0] << " Has been assigned" << endl;
-            ret = true;
-        } catch(std::exception &e) {
-            cout << "Wrong IP address format!" << endl;
-        }
-    }
-    return ret;
-}
-// void Test (boost::asio::io_service &io_service, std::string &arg, CommandDispatcher<TcpClient> &cmd_dispatcher) {
-//     TcpClient::pointer client = TcpClient::Create(io_service, arg);
-//     KeyBoardRoutine::pointer keyboard = KeyBoardRoutine::Create(io_service, client, cmd_dispatcher, 10);
-//     client->Start();
-//     keyboard->Start();
-// }
 
 int main (int argc, char *argv[]) {
     int ret_code = EXIT_FAILURE;
@@ -50,13 +31,17 @@ int main (int argc, char *argv[]) {
     cmd_dispatcher.AddCommand("UNSUBSCRIBE", unsubscribe);
 
     std::vector<std::string> arguments(argv + 1, argv + argc);
-    if(CheckAddrArgument(arguments)) {
+    if(Utils::CheckAddrArgument(arguments)) {
+        cout << "IP address: " << arguments[0] << " has been assigned" << endl;
         boost::asio::io_service io_service;
         TcpClient client(io_service, arguments[0]);
-        KeyBoardRoutine::pointer keyboard = KeyBoardRoutine::Create(io_service, client, cmd_dispatcher);
-        keyboard->Start();
+        ConsoleInput::pointer console_routine
+            = ConsoleInput::Create(io_service, std::move(client), std::move(cmd_dispatcher));
+        console_routine->Start();
         io_service.run();
         ret_code = EXIT_SUCCESS;
+    } else {
+        cout << "Wrong IP address format!" << endl;
     }
     return ret_code;
 }
