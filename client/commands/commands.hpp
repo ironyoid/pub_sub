@@ -21,6 +21,8 @@ namespace Commands {
                 auto port = Utils::GetPortFromStr(args[0]);
                 if(port) {
                     ret = context.Connect(port.value(), args[1]);
+                } else {
+                    ret = eStatus_WrongPort;
                 }
             } else {
                 ret = eStatus_WrongArgsNum;

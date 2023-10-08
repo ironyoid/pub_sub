@@ -2,4 +2,5 @@ build
 .vscode
 .cache
 .clang-format
+.clangd
 Embedded_Linux task.pdf

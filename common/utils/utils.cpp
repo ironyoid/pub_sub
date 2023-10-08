@@ -10,7 +10,7 @@ namespace Utils {
         uint16_t port = 0;
         try {
             int32_t port_32 = lexical_cast<int32_t>(str);
-            if(port_32 < 0 || port_32 > UINT16_MAX) {
+            if(port_32 < 1 || port_32 > UINT16_MAX) {
                 throw bad_lexical_cast();
             }
             port = static_cast<uint16_t>(port_32);
