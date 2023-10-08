@@ -7,9 +7,6 @@
 #include "utils.hpp"
 #include "parser.hpp"
 
-using std::cout;
-using std::endl;
-
 namespace Commands {
 
     template<class T> class Connect : public ICommand<T>
@@ -20,9 +17,8 @@ namespace Commands {
             const size_t args_num = 1;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                cout << NAME << " command"
-                     << " with " << args.size() << " agrs" << endl;
                 context.ptr->name = args[0];
+                std::cout << "[" << args[0] << "] has been connected" << std::endl;
                 ret = eStatus_Ok;
             } else {
                 ret = eStatus_WrongArgsNum;
@@ -40,15 +36,11 @@ namespace Commands {
             const size_t args_num = 2;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() >= args_num) {
-                cout << NAME << " command"
-                     << " with " << args.size() << " agrs" << endl;
                 std::string tmp = args[1];
-                for(auto i = args.begin() + 2; i != args.end(); i++) {
-                    cout << "[" << *i << "]" << endl;
+                for(auto i = args.begin() + 2; i != args.end(); ++i) {
                     tmp = tmp + " " + *i;
                 }
                 tmp = tmp + "\n";
-                std::cout << "Res string: " << tmp << endl;
                 context.broker.Notify(args[0], tmp);
                 ret = eStatus_Ok;
             } else {
@@ -66,10 +58,9 @@ namespace Commands {
             const size_t args_num = 1;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                cout << NAME << " command"
-                     << " with " << args.size() << " agrs" << endl;
                 ret = context.broker.Subscribe(args[0], context.ptr);
                 if(eStatus_Ok == ret) {
+                    context.broker.Print();
                     context.ptr->topics_.insert(args[0]);
                 }
             } else {
@@ -87,10 +78,9 @@ namespace Commands {
             const size_t args_num = 1;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                cout << NAME << " command"
-                     << " with " << args.size() << " agrs" << endl;
                 ret = context.broker.Unsubscribe(args[0], context.ptr);
                 if(eStatus_Ok == ret) {
+                    context.broker.Print();
                     context.ptr->topics_.erase(args[0]);
                 }
             } else {

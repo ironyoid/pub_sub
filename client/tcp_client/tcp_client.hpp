@@ -51,7 +51,7 @@ class TcpClient
     eStatus_t Disconnect (void);
     TcpConnection::weak_pointer weak_connection;
 
-    TcpClient(TcpClient &&moved) : io_service_(moved.io_service_) {
+    TcpClient(TcpClient &&moved) noexcept : io_service_(moved.io_service_) {
         is_connected = moved.is_connected;
         addr_ = std::move(moved.addr_);
         weak_connection = std::move(moved.weak_connection);

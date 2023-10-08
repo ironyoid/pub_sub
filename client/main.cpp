@@ -32,7 +32,7 @@ int main (int argc, char *argv[]) {
 
     std::vector<std::string> arguments(argv + 1, argv + argc);
     if(Utils::CheckAddrArgument(arguments)) {
-        cout << "IP address: " << arguments[0] << " has been assigned" << endl;
+        cout << "Server IP address: " << arguments[0] << endl;
         boost::asio::io_service io_service;
         TcpClient client(io_service, arguments[0]);
         ConsoleInput::pointer console_routine

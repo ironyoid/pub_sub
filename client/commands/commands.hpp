@@ -18,9 +18,9 @@ namespace Commands {
             const size_t args_num = 2;
             eStatus_t ret = eStatus_GeneralError;
             if(args.size() == args_num) {
-                uint16_t port = 0;
-                if(Utils::GetPortFromStr(args[0], port)) {
-                    ret = context.Connect(port, args[1]);
+                auto port = Utils::GetPortFromStr(args[0]);
+                if(port) {
+                    ret = context.Connect(port.value(), args[1]);
                 }
             } else {
                 ret = eStatus_WrongArgsNum;

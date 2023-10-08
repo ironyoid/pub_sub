@@ -1,7 +1,10 @@
 #include "tcp_server.hpp"
 #include "parser.hpp"
 #include "utils.hpp"
+#include <iostream>
 
+using std::cout;
+using std::endl;
 using namespace ErrorCodes;
 using namespace Commands;
 
@@ -37,8 +40,10 @@ eStatus_t Broker::Unsubscribe(const std::string &topic, ElementType element) {
         ListType::const_iterator set_itr = storage_[topic].find(element);
         if(set_itr != storage_[topic].end()) {
             storage_[topic].erase(set_itr);
+            if(0 == storage_[topic].size()) {
+                storage_.erase(topic);
+            }
             ret = eStatus_Ok;
-            /* TODO: Shall we remove topic if there are no more elements in it? */
         } else {
             ret = eStatus_ElementExistsError;
         }
@@ -60,13 +65,19 @@ eStatus_t Broker::Notify(const std::string &topic, const std::string &data) {
 }
 
 void Broker::Print(void) {
+    cout << endl << "[BROKER MAP size: " << storage_.size() << "]" << endl;
+    std::set<ElementType>::iterator itr;
     for(auto n : storage_) {
         cout << "[" << n.first << " ]: ";
-        for(auto k : n.second) {
-            cout << k->name << ", ";
+        std::string tmp{ "" };
+        for(itr = n.second.begin(); itr != n.second.end(); itr++) {
+            tmp = tmp + (*itr)->name + ", ";
         }
-        cout << endl;
+        tmp.pop_back();
+        tmp.pop_back();
+        cout << tmp << endl;
     }
+    cout << endl;
 }
 
 TcpConnection::pointer TcpConnection::Create(const boost::asio::any_io_executor &io_service,
@@ -119,23 +130,15 @@ void TcpConnection::HandleRead(const boost::system::error_code &error, size_t by
 
         ContextContainer context{ broker_, shared_from_this() };
         ErrorCodes::eStatus_t ret = parser_.ParseRawString(messageP, context);
-        std::cout << "Status code: " << ret << std::endl;
-        broker_.Print();
-        Print();
         Start();
 
     } else {
-        // for(auto n : topics_) {
-        //     broker_.Unsubscribe(n, shared_from_this());
-        // }
-        std::cout << "Error: Client has disconnected" << std::endl;
-        broker_.Print();
-        Print();
+        std::cout << "[" << name << "] has been disconnected!" << std::endl;
     }
 }
 
 void TcpConnection::Print(void) {
-    std::cout << "[" << name << "]: ";
+    std::cout << "[TOPICS][" << name << "]: ";
     for(auto n : topics_) {
         std::cout << n << ", ";
     }
@@ -176,7 +179,6 @@ void TcpServer::StartAccept() {
 
 void TcpServer::HandleAccept(TcpConnection::pointer new_connection, const boost::system::error_code &error) {
     if(!error) {
-        std::cout << "A client connected" << std::endl;
         new_connection->Start();
     }
 

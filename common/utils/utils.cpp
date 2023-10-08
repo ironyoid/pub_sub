@@ -1,26 +1,27 @@
 #include "utils.hpp"
+#include <_types/_uint16_t.h>
 #include <boost/asio.hpp>
 
 using boost::bad_lexical_cast;
 using boost::lexical_cast;
 
 namespace Utils {
-    bool GetPortFromStr (const std::string &str, uint16_t &port) {
-        bool ret = false;
+    std::optional<uint16_t> GetPortFromStr (const std::string &str) {
+        uint16_t port = 0;
         try {
             int32_t port_32 = lexical_cast<int32_t>(str);
             if(port_32 < 0 || port_32 > UINT16_MAX) {
                 throw bad_lexical_cast();
             }
             port = static_cast<uint16_t>(port_32);
-            ret = true;
+            return std::optional<uint16_t>{ port };
 
         } catch(bad_lexical_cast &) {
         }
-        return ret;
+        return {};
     }
 
-    bool CheckAddrArgument (std::vector<std::string> args) {
+    bool CheckAddrArgument (const std::vector<std::string> args) {
         bool ret = false;
         if(args.size() == 1) {
             try {

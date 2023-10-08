@@ -13,6 +13,10 @@ ConsoleInput::pointer ConsoleInput::Create(boost::asio::io_service &io_service,
 }
 
 void ConsoleInput::Start(void) {
+    cout << "["
+         << "SYS"
+         << "]-> ";
+    cout.flush();
     async_read_until(input_,
                      message_,
                      '\n',
@@ -40,17 +44,27 @@ void ConsoleInput::HandleRead(const boost::system::error_code &error, size_t byt
     eStatus_t status = dispatcher_.ParseRawString(messageP, client_);
     switch(status) {
         case ErrorCodes::eStatus_Ok:
-            cout << "Comand has been executed successfully" << endl;
+            cout << "Comand has been executed successfully!" << endl;
             break;
         case ErrorCodes::eStatus_WrongArgsNum:
-            cout << "Wrong number of command parametrs" << endl;
+            cout << "Wrong number of command parametrs!" << endl;
             break;
         case ErrorCodes::eStatus_GeneralError:
-            cout << "Unknown error" << endl;
+            cout << "Unknown error!" << endl;
             break;
         case ErrorCodes::eStatus_LostConnection:
-            cout << "Connection has been lost" << endl;
+            cout << "There are no any connections!" << endl;
             break;
+        case ErrorCodes::eStatus_WrongPort:
+            cout << "Port argument is invalid!" << endl;
+            break;
+        case ErrorCodes::eStatus_PortAlreadyInUse:
+            cout << "Port is already in use!" << endl;
+            break;
+        case ErrorCodes::eStatus_ConnectionRefused:
+            cout << "Connection refused!" << endl;
+            break;
+
         default:
             break;
     }

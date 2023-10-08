@@ -19,12 +19,26 @@ TcpConnection::TcpConnection(boost::asio::io_service &io_service, const std::str
 eStatus_t TcpConnection::Connect(uint16_t port) {
     eStatus_t ret = eStatus_GeneralError;
     boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string(addr_), port);
-    try {
-        socket_.connect(endpoint);
-        ret = eStatus_Ok;
-    } catch(std::exception &e) {
-        std::cerr << "Exception: " << e.what() << "\n";
+
+    boost::system::error_code ec;
+    socket_.connect(endpoint, ec);
+    switch(ec.value()) {
+        case boost::system::errc::success:
+            ret = eStatus_Ok;
+            break;
+        case boost::system::errc::address_not_available:
+            ret = eStatus_WrongPort;
+            break;
+        case boost::asio::error::already_connected:
+            ret = eStatus_PortAlreadyInUse;
+            break;
+        case boost::asio::error::connection_refused:
+            ret = eStatus_ConnectionRefused;
+            break;
+        default:
+            break;
     }
+
     return ret;
 }
 
@@ -77,9 +91,10 @@ TcpClient::TcpClient(boost::asio::io_service &io_service, const std::string &add
 
 eStatus_t TcpClient::Connect(uint16_t port, const std::string &name) {
     eStatus_t ret = eStatus_GeneralError;
-    if(false == is_connected) {
+    if(true == weak_connection.expired()) {
         TcpConnection::pointer ptr = TcpConnection::Create(io_service_, addr_, name);
-        if(eStatus_Ok == ptr->Connect(port)) {
+        ret = ptr->Connect(port);
+        if(eStatus_Ok == ret) {
             std::string tmp = "CONNECT " + name + "\n";
             if(ptr->Write(tmp) == tmp.size()) {
                 ptr->Start();

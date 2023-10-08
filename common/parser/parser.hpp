@@ -26,38 +26,38 @@ template<class T> class CommandDispatcher
 
     };
 
-    eStatus_t AddCommand (std::string name, ICommand<T> &command) {
+    eStatus_t AddCommand (const std::string &name, ICommand<T> &command) {
         eStatus_t ret = eStatus_GeneralError;
         typename StorageType::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair == map_.end()) {
             map_[name] = &command;
             ret = eStatus_Ok;
-
         } else {
             std::cout << "Command already exists!" << std::endl;
         }
         return ret;
     }
 
-    eStatus_t ParseRawString (std::string &raw_str, T &context) {
+    eStatus_t ParseRawString (const std::string &raw_str, T &context) {
         eStatus_t ret = eStatus_GeneralError;
+        const std::string del = " ";
+        std::string found = "";
+        std::string last(raw_str);
         std::vector<std::string> args;
-        std::string name = "";
-        std::string del = " ";
-        while(raw_str != "") {
-            if(name == "") {
-                name = FindString(raw_str, del);
+        while(last != "") {
+            if(found == "") {
+                found = FindString(last, del);
             } else {
-                args.push_back(FindString(raw_str, del));
+                args.push_back(FindString(last, del));
             }
         }
-        if(name != "") {
-            ret = Dispatch(name, args, context);
+        if(found != "") {
+            ret = Dispatch(found, args, context);
         }
         return ret;
     }
 
-    std::string FindString (std::string &s, std::string &del) {
+    std::string FindString (std::string &s, const std::string &del) {
         std::string a;
         int end = s.find(del);
         if(std::string::npos != end) {
@@ -73,12 +73,12 @@ template<class T> class CommandDispatcher
         return a;
     }
 
-    CommandDispatcher(CommandDispatcher &&moved) {
+    CommandDispatcher(CommandDispatcher &&moved) noexcept {
         map_ = std::move(moved.map_);
     }
 
    private:
-    eStatus_t Dispatch (std::string &name, std::vector<std::string> &args, T &context) {
+    eStatus_t Dispatch (const std::string &name, const std::vector<std::string> &args, T &context) {
         eStatus_t ret = eStatus_GeneralError;
         typename StorageType::const_iterator cmd_pair = map_.find(name);
         if(cmd_pair != map_.end()) {
