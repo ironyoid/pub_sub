@@ -11,6 +11,10 @@
 #include "utils.hpp"
 #include "logs.hpp"
 
+using ConsoleIO::ConsoleInput;
+using Network::TcpClient;
+using Parser::CommandDispatcher;
+
 int main (int argc, char *argv[]) {
     int ret_code = EXIT_FAILURE;
     Commands::Connect<TcpClient> connect;

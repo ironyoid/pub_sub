@@ -10,26 +10,31 @@
 #include "tcp_client.hpp"
 #include <boost/asio/posix/stream_descriptor.hpp>
 
-class ConsoleInput : public boost::enable_shared_from_this<ConsoleInput>
-{
-   public:
-    using pointer = boost::shared_ptr<ConsoleInput>;
+namespace ConsoleIO {
 
-    static ConsoleInput::pointer Create (boost::asio::io_service &io_service,
-                                         TcpClient client,
-                                         CommandDispatcher<TcpClient> dispatcher);
-    void Start (void);
+    class ConsoleInput : public boost::enable_shared_from_this<ConsoleInput>
+    {
+       public:
+        using pointer = boost::shared_ptr<ConsoleInput>;
 
-   private:
-    ConsoleInput(boost::asio::io_service &io_service, TcpClient client, CommandDispatcher<TcpClient> dispatcher);
-    void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
-    /* Do not copy! */
-    ConsoleInput(const ConsoleInput &) = delete;
-    void operator=(const ConsoleInput &) = delete;
+        static ConsoleInput::pointer Create (boost::asio::io_service &io_service,
+                                             Network::TcpClient client,
+                                             Parser::CommandDispatcher<Network::TcpClient> dispatcher);
+        void Start (void);
 
-    boost::asio::streambuf message_;
-    boost::asio::posix::stream_descriptor input_;
-    CommandDispatcher<TcpClient> dispatcher_;
-    TcpClient client_;
-};
+       private:
+        ConsoleInput(boost::asio::io_service &io_service,
+                     Network::TcpClient client,
+                     Parser::CommandDispatcher<Network::TcpClient> dispatcher);
+        void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
+        /* Do not copy! */
+        ConsoleInput(const ConsoleInput &) = delete;
+        void operator=(const ConsoleInput &) = delete;
+
+        boost::asio::streambuf message_;
+        boost::asio::posix::stream_descriptor input_;
+        Parser::CommandDispatcher<Network::TcpClient> dispatcher_;
+        Network::TcpClient client_;
+    };
+} // namespace ConsoleIO
 #endif /* _KEYBOARD_H__ */

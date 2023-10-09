@@ -17,8 +17,8 @@ int main (int argc, char *argv[]) {
         if(port) {
             try {
                 boost::asio::io_service io_service;
-                TcpServer server(io_service, port.value());
-                LOG_NO_CONSOLE("SYS", "Server is now running. Access port: " << port.value());
+                Network::TcpServer server(io_service, port.value());
+                LOG_NO_INPUT("SYS", "Server is now running. Access port: " << port.value());
                 io_service.run();
                 ret_code = EXIT_SUCCESS;
             } catch(std::exception &e) {

@@ -1,6 +1,7 @@
 # P3 Mobility Code Assignment
 ### Overview
 Project programming language is C++17. Boost::Asio has been chosen as a framework to manage network.
+I build and test on MacOS but the project should be also compatible with any POSIX system but not with Windows.
 The project is based on `cmake` and includes two targets:
 * `p3_client` - tcp client implements all task requerements
 * `p3_server` - tcp client implements all task requerements
