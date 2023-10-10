@@ -10,7 +10,7 @@ using namespace ErrorCodes;
 using namespace Commands;
 
 namespace Network {
-    Network::Broker::Broker() : storage_() {
+    Network::Broker::Broker() {
     }
 
     eStatus_t Broker::Subscribe(const std::string &topic, ElementType element) {
@@ -20,9 +20,9 @@ namespace Network {
 
     eStatus_t Broker::Unsubscribe(const std::string &topic, ElementType element) {
         eStatus_t ret = eStatus_GeneralError;
-        auto map_itr = storage_.find(topic);
+        StorageType::const_iterator map_itr = storage_.find(topic);
         if(map_itr != storage_.end()) {
-            auto set_itr = storage_[topic].find(element);
+            ListType::const_iterator set_itr = storage_[topic].find(element);
             if(set_itr != storage_[topic].end()) {
                 storage_[topic].erase(set_itr);
                 if(0 == storage_[topic].size()) {
@@ -40,9 +40,9 @@ namespace Network {
         eStatus_t ret = eStatus_GeneralError;
         auto map_itr = storage_.find(topic);
         if(map_itr != storage_.end()) {
-            for(const auto &n : storage_[topic]) {
+            auto elem = storage_[topic];
+            for(const auto &n : elem) {
                 LOG_NO_INPUT("SYS", "Send message: [" << data << "] to the topic: [" << n->name << "]");
-
                 n->AddToQueue("Topic: " + topic + " Data: " + data + "\n");
             }
             ret = eStatus_Ok;
@@ -76,15 +76,6 @@ namespace Network {
         return socket_;
     }
 
-    TcpConnection::~TcpConnection() {
-        LOG_NO_INPUT("SYS",
-                     "[" << name << "]"
-                         << " has been deleted!");
-        for(const auto &n : topics_) {
-            broker_.Unsubscribe(n, shared_from_this());
-        }
-    }
-
     void TcpConnection::Start() {
         async_read_until(
             socket_,
@@ -103,11 +94,43 @@ namespace Network {
         parser_(parser) {
     }
 
-    void TcpConnection::HandleWrite(const boost::system::error_code &error, size_t bytes_transferred) {
-        /* TODO: Shall we handle errors here? */
-        for_send.clear();
+    TcpConnection::~TcpConnection() {
+        LOG_NO_INPUT("SYS",
+                     "[" << name << "]"
+                         << " has been deleted!");
+        for(const auto &n : topics_) {
+            broker_.Unsubscribe(n, shared_from_this());
+        }
+        broker_.Print();
+    }
+
+    void TcpConnection::AddToQueue(const std::string &data) {
+        accumulator.append(data);
         if(!accumulator.empty()) {
-            AddToQueue({});
+            if(for_send.empty()) {
+                for_send.swap(accumulator);
+                SendMessage(for_send);
+            }
+        }
+    }
+
+    void TcpConnection::SendMessage(const std::string &data) {
+        boost::asio::async_write(
+            socket_,
+            boost::asio::buffer(data),
+            [this, self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
+                HandleWrite(error, bytes_transferred);
+            });
+    }
+
+    void TcpConnection::HandleWrite(const boost::system::error_code &error, size_t bytes_transferred) {
+        if(!error) {
+            for_send.clear();
+            if(!accumulator.empty()) {
+                AddToQueue({});
+            }
+        } else {
+            LOG_NO_INPUT("SYS", "[" << name << "] Write error! Code: " << error.to_string());
         }
     }
 
@@ -138,23 +161,6 @@ namespace Network {
             std::cout << n << ", ";
         }
         std::cout << std::endl;
-    }
-
-    void TcpConnection::AddToQueue(const std::string &data) {
-        accumulator.append(data);
-        if(for_send.empty()) {
-            for_send.swap(accumulator);
-            SendMessage(for_send);
-        }
-    }
-
-    void TcpConnection::SendMessage(const std::string &data) {
-        boost::asio::async_write(
-            socket_,
-            boost::asio::buffer(data),
-            [this, self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
-                HandleWrite(error, bytes_transferred);
-            });
     }
 
     TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :
