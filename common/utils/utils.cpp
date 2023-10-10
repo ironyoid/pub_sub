@@ -1,5 +1,5 @@
 #include "utils.hpp"
-#include <_types/_uint16_t.h>
+#include <stdint.h>
 #include <boost/asio.hpp>
 
 using boost::bad_lexical_cast;

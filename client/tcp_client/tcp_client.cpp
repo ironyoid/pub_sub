@@ -1,7 +1,7 @@
 #include "tcp_client.hpp"
 #include "console_input.hpp"
 #include "utils.hpp"
-#include <_types/_uint16_t.h>
+#include <stdint.h>
 #include "logs.hpp"
 
 namespace Network {
@@ -90,8 +90,7 @@ namespace Network {
 
     TcpClient::TcpClient(boost::asio::io_service &io_service, const std::string &addr) :
         io_service_(io_service),
-        addr_(addr),
-        is_connected(false) {
+        addr_(addr) {
     }
 
     ErrorCodes::eStatus_t TcpClient::Connect(uint16_t port, const std::string &name) {
@@ -104,7 +103,6 @@ namespace Network {
                 if(ptr->Write(tmp) == tmp.size()) {
                     ptr->Start();
                     weak_connection = ptr;
-                    is_connected = true;
                     ret = ErrorCodes::eStatus_Ok;
                 }
             }
@@ -118,7 +116,6 @@ namespace Network {
             auto shrd_tmp = weak_connection.lock();
             shrd_tmp->Disconnect();
             ret = ErrorCodes::eStatus_Ok;
-            is_connected = false;
         }
         return ret;
     }

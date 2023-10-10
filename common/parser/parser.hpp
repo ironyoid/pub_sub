@@ -29,7 +29,7 @@ namespace Parser {
 
         ErrorCodes::eStatus_t AddCommand (const std::string &name, ICommand<T> &command) {
             ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
-            typename StorageType::const_iterator cmd_pair = map_.find(name);
+            auto cmd_pair = map_.find(name);
             if(cmd_pair == map_.end()) {
                 map_[name] = &command;
                 ret = ErrorCodes::eStatus_Ok;
@@ -81,7 +81,7 @@ namespace Parser {
        private:
         ErrorCodes::eStatus_t Dispatch (const std::string &name, const std::vector<std::string> &args, T &context) {
             ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
-            typename StorageType::const_iterator cmd_pair = map_.find(name);
+            auto cmd_pair = map_.find(name);
             if(cmd_pair != map_.end()) {
                 ret = map_[name]->Execute(context, args);
 

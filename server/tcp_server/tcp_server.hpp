@@ -66,7 +66,6 @@ namespace Network {
 
         Broker();
 
-        size_t GetNumberOfSubscribers (std::string &topic);
         ErrorCodes::eStatus_t Subscribe (const std::string &topic, ElementType element);
         ErrorCodes::eStatus_t Unsubscribe (const std::string &topic, ElementType element);
         ErrorCodes::eStatus_t Notify (const std::string &topic, const std::string &data);

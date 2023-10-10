@@ -50,7 +50,6 @@ namespace Network {
         TcpConnection::weak_pointer weak_connection;
 
         TcpClient(TcpClient &&moved) noexcept : io_service_(moved.io_service_) {
-            is_connected = moved.is_connected;
             addr_ = std::move(moved.addr_);
             weak_connection = std::move(moved.weak_connection);
         }
@@ -60,7 +59,6 @@ namespace Network {
         TcpClient(const TcpClient &) = delete;
         void operator=(const TcpClient &) = delete;
 
-        bool is_connected;
         boost::asio::io_service &io_service_;
         std::string addr_;
     };

@@ -13,33 +13,16 @@ namespace Network {
     Network::Broker::Broker() : storage_() {
     }
 
-    size_t Broker::GetNumberOfSubscribers(std::string &topic) {
-        size_t ret = 0;
-        StorageType::const_iterator cmd_pair = storage_.find(topic);
-        if(cmd_pair != storage_.end()) {
-            ret = storage_[topic].size();
-        }
-        return ret;
-    }
-
     eStatus_t Broker::Subscribe(const std::string &topic, ElementType element) {
-        eStatus_t ret = eStatus_GeneralError;
-        bool is_exist = false;
-        ListType::const_iterator set_itr = storage_[topic].find(element);
-        if(set_itr == storage_[topic].end()) {
-            storage_[topic].insert(element);
-            ret = eStatus_Ok;
-        } else {
-            ret = eStatus_ElementExistsError;
-        }
-        return ret;
+        auto [_, is_found] = storage_[topic].emplace(element);
+        return is_found ? eStatus_Ok : eStatus_ElementExistsError;
     }
 
     eStatus_t Broker::Unsubscribe(const std::string &topic, ElementType element) {
         eStatus_t ret = eStatus_GeneralError;
-        StorageType::const_iterator map_itr = storage_.find(topic);
+        auto map_itr = storage_.find(topic);
         if(map_itr != storage_.end()) {
-            ListType::const_iterator set_itr = storage_[topic].find(element);
+            auto set_itr = storage_[topic].find(element);
             if(set_itr != storage_[topic].end()) {
                 storage_[topic].erase(set_itr);
                 if(0 == storage_[topic].size()) {
@@ -55,7 +38,7 @@ namespace Network {
 
     eStatus_t Broker::Notify(const std::string &topic, const std::string &data) {
         eStatus_t ret = eStatus_GeneralError;
-        StorageType::const_iterator map_itr = storage_.find(topic);
+        auto map_itr = storage_.find(topic);
         if(map_itr != storage_.end()) {
             for(const auto &n : storage_[topic]) {
                 LOG_NO_INPUT("SYS", "Send message: [" << data << "] to the topic: [" << n->name << "]");
@@ -69,7 +52,7 @@ namespace Network {
     void Broker::Print(void) {
         cout << "[BROKER MAP size: " << storage_.size() << "]" << endl;
         std::set<ElementType>::iterator itr;
-        for(auto n : storage_) {
+        for(const auto &n : storage_) {
             cout << "[" << n.first << "]: ";
             std::string tmp{ "" };
             for(itr = n.second.begin(); itr != n.second.end(); itr++) {
@@ -96,7 +79,7 @@ namespace Network {
         LOG_NO_INPUT("SYS",
                      "[" << name << "]"
                          << " has been deleted!");
-        for(auto n : topics_) {
+        for(const auto &n : topics_) {
             broker_.Unsubscribe(n, shared_from_this());
         }
     }
@@ -116,9 +99,7 @@ namespace Network {
                                  Parser::CommandDispatcher<ContextContainer> &parser) :
         socket_(io_service),
         broker_(broker),
-        parser_(parser),
-        topics_(),
-        name() {
+        parser_(parser) {
     }
 
     void TcpConnection::HandleWrite(const boost::system::error_code &error, size_t bytes_transferred) {
@@ -137,7 +118,7 @@ namespace Network {
             Start();
 
         } else {
-            for(auto n : topics_) {
+            for(const auto &n : topics_) {
                 broker_.Unsubscribe(n, shared_from_this());
             }
             topics_.clear();
@@ -147,7 +128,7 @@ namespace Network {
 
     void TcpConnection::Print(void) {
         std::cout << "[TOPICS][" << name << "]: ";
-        for(auto n : topics_) {
+        for(const auto &n : topics_) {
             std::cout << n << ", ";
         }
         std::cout << std::endl;
@@ -163,13 +144,7 @@ namespace Network {
     }
 
     TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :
-        acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
-        broker_(),
-        parser_(),
-        name_cmd(),
-        pub_cmd(),
-        sub_cmd(),
-        unsub_cmd() {
+        acceptor_(io_service, tcp::endpoint(tcp::v4(), port)) {
         parser_.AddCommand("CONNECT", name_cmd);
         parser_.AddCommand("PUBLISH", pub_cmd);
         parser_.AddCommand("SUBSCRIBE", sub_cmd);
