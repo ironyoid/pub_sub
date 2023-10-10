@@ -42,7 +42,8 @@ namespace Network {
         if(map_itr != storage_.end()) {
             for(const auto &n : storage_[topic]) {
                 LOG_NO_INPUT("SYS", "Send message: [" << data << "] to the topic: [" << n->name << "]");
-                n->SendMessage("Topic: " + topic + " Data: " + data + "\n");
+
+                n->AddToQueue("Topic: " + topic + " Data: " + data + "\n");
             }
             ret = eStatus_Ok;
         }
@@ -85,13 +86,13 @@ namespace Network {
     }
 
     void TcpConnection::Start() {
-        async_read_until(socket_,
-                         message_,
-                         '\n',
-                         boost::bind(&TcpConnection::HandleRead,
-                                     shared_from_this(),
-                                     boost::asio::placeholders::error,
-                                     boost::asio::placeholders::bytes_transferred));
+        async_read_until(
+            socket_,
+            message_,
+            '\n',
+            [self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
+                self->HandleRead(error, bytes_transferred);
+            });
     }
 
     TcpConnection::TcpConnection(const boost::asio::any_io_executor &io_service,
@@ -103,6 +104,11 @@ namespace Network {
     }
 
     void TcpConnection::HandleWrite(const boost::system::error_code &error, size_t bytes_transferred) {
+        /* TODO: Shall we handle errors here? */
+        for_send.clear();
+        if(!accumulator.empty()) {
+            AddToQueue({});
+        }
     }
 
     void TcpConnection::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
@@ -134,13 +140,21 @@ namespace Network {
         std::cout << std::endl;
     }
 
+    void TcpConnection::AddToQueue(const std::string &data) {
+        accumulator.append(data);
+        if(for_send.empty()) {
+            for_send.swap(accumulator);
+            SendMessage(for_send);
+        }
+    }
+
     void TcpConnection::SendMessage(const std::string &data) {
-        boost::asio::async_write(socket_,
-                                 boost::asio::buffer(data),
-                                 boost::bind(&TcpConnection::HandleWrite,
-                                             shared_from_this(),
-                                             boost::asio::placeholders::error,
-                                             boost::asio::placeholders::bytes_transferred));
+        boost::asio::async_write(
+            socket_,
+            boost::asio::buffer(data),
+            [this, self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
+                HandleWrite(error, bytes_transferred);
+            });
     }
 
     TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :
@@ -157,7 +171,7 @@ namespace Network {
 
         acceptor_.async_accept(
             new_connection->Socket(),
-            boost::bind(&TcpServer::HandleAccept, this, new_connection, boost::asio::placeholders::error));
+            [this, new_connection] (const boost::system::error_code error) { HandleAccept(new_connection, error); });
     }
 
     void TcpServer::HandleAccept(TcpConnection::pointer new_connection, const boost::system::error_code &error) {

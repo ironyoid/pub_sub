@@ -1,7 +1,6 @@
 #ifndef _TCP_SERVER_H__
 #define _TCP_SERVER_H__
 #include <iostream>
-#include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
@@ -14,6 +13,7 @@
 #include "utils.hpp"
 #include "parser.hpp"
 #include "commands.hpp"
+#include <queue>
 
 namespace Network {
     class Broker;
@@ -30,6 +30,7 @@ namespace Network {
         void Start ();
         void Print (void);
         void SendMessage (const std::string &data);
+        void AddToQueue (const std::string &data);
         ~TcpConnection();
 
         std::string name;
@@ -51,6 +52,8 @@ namespace Network {
         boost::asio::ip::tcp::socket socket_;
         boost::asio::streambuf message_;
 
+        std::string accumulator;
+        std::string for_send;
         friend class Commands::Connect<ContextContainer>;
         friend class Commands::Publish<ContextContainer>;
         friend class Commands::Subscribe<ContextContainer>;
