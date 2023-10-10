@@ -2,11 +2,12 @@
 #include "parser.hpp"
 #include "utils.hpp"
 #include <iostream>
+#include <boost/make_shared.hpp>
 
 using boost::asio::ip::tcp;
 using std::cout;
 using std::endl;
-using namespace ErrorCodes;
+using namespace ErrorStatus;
 using namespace Commands;
 
 namespace Network {
@@ -15,37 +16,37 @@ namespace Network {
 
     eStatus_t Broker::Subscribe(const std::string &topic, ElementType element) {
         auto [_, is_found] = storage_[topic].emplace(element);
-        return is_found ? eStatus_Ok : eStatus_ElementExistsError;
+        return is_found ? eStatus_t::Ok : eStatus_t::ElementExistsError;
     }
 
     eStatus_t Broker::Unsubscribe(const std::string &topic, ElementType element) {
-        eStatus_t ret = eStatus_GeneralError;
+        eStatus_t ret = eStatus_t::GeneralError;
         auto map_itr = storage_.find(topic);
         if(map_itr != storage_.end()) {
-            auto set_itr = storage_[topic].find(element);
-            if(set_itr != storage_[topic].end()) {
-                storage_[topic].erase(set_itr);
-                if(0 == storage_[topic].size()) {
+            auto &elem = map_itr->second;
+            auto set_itr = elem.find(element);
+            if(set_itr != elem.end()) {
+                elem.erase(set_itr);
+                if(0 == elem.size()) {
                     storage_.erase(topic);
                 }
-                ret = eStatus_Ok;
+                ret = eStatus_t::Ok;
             } else {
-                ret = eStatus_ElementExistsError;
+                ret = eStatus_t::ElementExistsError;
             }
         }
         return ret;
     }
 
     eStatus_t Broker::Notify(const std::string &topic, const std::string &data) {
-        eStatus_t ret = eStatus_GeneralError;
+        eStatus_t ret = eStatus_t::GeneralError;
         auto map_itr = storage_.find(topic);
         if(map_itr != storage_.end()) {
-            auto elem = storage_[topic];
-            for(const auto &n : elem) {
+            for(const auto &n : map_itr->second) {
                 LOG_NO_INPUT("SYS", "Send message: [" << data << "] to the topic: [" << n->name << "]");
                 n->AddToQueue("Topic: " + topic + " Data: " + data + "\n");
             }
-            ret = eStatus_Ok;
+            ret = eStatus_t::Ok;
         }
         return ret;
     }
@@ -59,8 +60,11 @@ namespace Network {
             for(itr = n.second.begin(); itr != n.second.end(); itr++) {
                 tmp = tmp + (*itr)->name + ", ";
             }
-            tmp.pop_back();
-            tmp.pop_back();
+            try {
+                tmp.resize(tmp.size() - 2);
+            } catch(const std::length_error &e) {
+                cout << "Corrupted" << endl;
+            }
             cout << tmp << endl;
         }
         cout << endl;
@@ -69,7 +73,7 @@ namespace Network {
     TcpConnection::pointer TcpConnection::Create(const boost::asio::any_io_executor &io_service,
                                                  Broker &broker,
                                                  Parser::CommandDispatcher<ContextContainer> &parser) {
-        return pointer(new TcpConnection(io_service, broker, parser));
+        return boost::make_shared<TcpConnection>(Tag{}, io_service, broker, parser);
     }
 
     tcp::socket &TcpConnection::Socket() {
@@ -86,22 +90,19 @@ namespace Network {
             });
     }
 
-    TcpConnection::TcpConnection(const boost::asio::any_io_executor &io_service,
+    TcpConnection::TcpConnection(Tag,
+                                 const boost::asio::any_io_executor &io_service,
                                  Broker &broker,
                                  Parser::CommandDispatcher<ContextContainer> &parser) :
-        socket_(io_service),
         broker_(broker),
-        parser_(parser) {
+        parser_(parser),
+        socket_(io_service) {
     }
 
     TcpConnection::~TcpConnection() {
         LOG_NO_INPUT("SYS",
                      "[" << name << "]"
                          << " has been deleted!");
-        for(const auto &n : topics_) {
-            broker_.Unsubscribe(n, shared_from_this());
-        }
-        broker_.Print();
     }
 
     void TcpConnection::AddToQueue(const std::string &data) {
@@ -123,35 +124,46 @@ namespace Network {
             });
     }
 
-    void TcpConnection::HandleWrite(const boost::system::error_code &error, size_t bytes_transferred) {
+    void TcpConnection::HandleWrite(const boost::system::error_code &error, size_t) {
         if(!error) {
             for_send.clear();
             if(!accumulator.empty()) {
                 AddToQueue({});
             }
         } else {
+            Disconnect();
             LOG_NO_INPUT("SYS", "[" << name << "] Write error! Code: " << error.to_string());
         }
     }
 
-    void TcpConnection::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
+    void TcpConnection::HandleRead(const boost::system::error_code &error, size_t) {
         if((boost::asio::error::eof != error) && (boost::asio::error::connection_reset != error)) {
-            std::string messageP;
-            std::stringstream ss;
-            ss << &message_;
-            ss.flush();
-            messageP = ss.str();
-
+            auto msg = Utils::StreamBufToString(message_);
             ContextContainer context{ broker_, shared_from_this() };
-            ErrorCodes::eStatus_t ret = parser_.ParseRawString(messageP, context);
+            parser_.ParseRawString(msg, context);
             Start();
 
         } else {
-            for(const auto &n : topics_) {
-                broker_.Unsubscribe(n, shared_from_this());
-            }
-            topics_.clear();
+            Disconnect();
             LOG_NO_INPUT("SYS", "[" << name << "] has been disconnected!");
+            broker_.Print();
+        }
+    }
+
+    void TcpConnection::UnsubscribeFromAll(void) {
+        for(const auto &n : topics_) {
+            broker_.Unsubscribe(n, shared_from_this());
+        }
+        topics_.clear();
+    }
+
+    void TcpConnection::Disconnect(void) {
+        UnsubscribeFromAll();
+        try {
+            socket_.close();
+            LOG_NO_INPUT("SYS", "[" << name << "] Socket has been closed!");
+        } catch(boost::system::error_code &err) {
+            LOG_NO_INPUT("SYS", "[" << name << "] couldn't close the socket");
         }
     }
 
@@ -165,10 +177,10 @@ namespace Network {
 
     TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :
         acceptor_(io_service, tcp::endpoint(tcp::v4(), port)) {
-        parser_.AddCommand("CONNECT", name_cmd);
-        parser_.AddCommand("PUBLISH", pub_cmd);
-        parser_.AddCommand("SUBSCRIBE", sub_cmd);
-        parser_.AddCommand("UNSUBSCRIBE", unsub_cmd);
+        parser_.AddCommand(name_cmd);
+        parser_.AddCommand(pub_cmd);
+        parser_.AddCommand(sub_cmd);
+        parser_.AddCommand(unsub_cmd);
         StartAccept();
     }
 

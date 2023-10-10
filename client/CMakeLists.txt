@@ -2,3 +2,4 @@ add_executable(p3_client main.cpp tcp_client/tcp_client.cpp console/console_inpu
 target_include_directories(p3_client PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/tcp_client ${CMAKE_CURRENT_SOURCE_DIR}/commands ${CMAKE_CURRENT_SOURCE_DIR}/console)
 target_link_libraries(p3_client LINK_PUBLIC ${Boost_LIBRARIES})
 target_link_libraries(p3_client LINK_PUBLIC Utils)
+target_compile_options(p3_client PRIVATE -Wall -Wextra)

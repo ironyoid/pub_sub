@@ -8,6 +8,7 @@
 #include <vector>
 #include <utils.hpp>
 #include "logs.hpp"
+#include <boost/algorithm/string.hpp>
 
 namespace Parser {
 
@@ -15,7 +16,8 @@ namespace Parser {
     {
        public:
         virtual ~ICommand(){};
-        virtual ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) = 0;
+        virtual ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) = 0;
+        virtual const std::string GetName (void) = 0;
     };
 
     template<class T> class CommandDispatcher
@@ -23,55 +25,36 @@ namespace Parser {
        public:
         using StorageType = std::map<std::string, ICommand<T> *>;
 
-        CommandDispatcher(){
+        CommandDispatcher() = default;
 
-        };
-
-        ErrorCodes::eStatus_t AddCommand (const std::string &name, ICommand<T> &command) {
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
-            auto cmd_pair = map_.find(name);
-            if(cmd_pair == map_.end()) {
-                map_[name] = &command;
-                ret = ErrorCodes::eStatus_Ok;
+        ErrorStatus::eStatus_t AddCommand (ICommand<T> &command) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
+            auto map_itr = map_.find(command.GetName());
+            if(map_itr == map_.end()) {
+                map_[command.GetName()] = &command;
+                ret = ErrorStatus::eStatus_t::Ok;
             } else {
                 LOG("SYS", "Command already exists!");
             }
             return ret;
         }
 
-        ErrorCodes::eStatus_t ParseRawString (const std::string &raw_str, T &context) {
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
-            const std::string del = " ";
-            std::string found = "";
-            std::string last(raw_str);
-            std::vector<std::string> args;
-            while(last != "") {
-                if(found == "") {
-                    found = FindString(last, del);
-                } else {
-                    args.push_back(FindString(last, del));
-                }
-            }
-            if(found != "") {
-                ret = Dispatch(found, args, context);
+        ErrorStatus::eStatus_t ParseRawString (const std::string &raw_str, T &context) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
+            auto args = FindString(raw_str);
+            if(0 != args.size()) {
+                ret = Dispatch(args, context);
             }
             return ret;
         }
 
-        std::string FindString (std::string &s, const std::string &del) {
-            std::string a;
-            int end = s.find(del);
-            if(std::string::npos != end) {
-                a = s.substr(0, end);
-                s.erase(s.begin(), s.begin() + end + del.length());
-            } else {
-                if(s.back() == '\n') {
-                    s.pop_back();
-                }
-                a = s;
-                s = "";
+        std::vector<std::string> FindString (const std::string &s) {
+            std::vector<std::string> result;
+            boost::split(result, s, boost::is_any_of(" "));
+            if(0 != result.size()) {
+                result.back().pop_back();
             }
-            return a;
+            return result;
         }
 
         CommandDispatcher(CommandDispatcher &&moved) noexcept {
@@ -79,12 +62,11 @@ namespace Parser {
         }
 
        private:
-        ErrorCodes::eStatus_t Dispatch (const std::string &name, const std::vector<std::string> &args, T &context) {
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
-            auto cmd_pair = map_.find(name);
-            if(cmd_pair != map_.end()) {
-                ret = map_[name]->Execute(context, args);
-
+        ErrorStatus::eStatus_t Dispatch (const std::vector<std::string> &args, T &context) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
+            auto map_itr = map_.find(args[0]);
+            if(map_itr != map_.end()) {
+                ret = map_[args[0]]->Execute(context, args);
             } else {
                 LOG("SYS", "This command is not present in the system!");
             }

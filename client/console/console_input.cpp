@@ -4,13 +4,16 @@
 #include "utils.hpp"
 #include <iostream>
 #include <logs.hpp>
+#include <memory>
+#include <boost/make_shared.hpp>
 
+using namespace ErrorStatus;
 namespace ConsoleIO {
 
     ConsoleInput::pointer ConsoleInput::Create(boost::asio::io_service &io_service,
                                                Network::TcpClient client,
                                                Parser::CommandDispatcher<Network::TcpClient> dispatcher) {
-        return pointer(new ConsoleInput(io_service, std::move(client), std::move(dispatcher)));
+        return boost::make_shared<ConsoleInput>(Tag{}, io_service, std::move(client), std::move(dispatcher));
     }
 
     void ConsoleInput::Start(void) {
@@ -18,12 +21,13 @@ namespace ConsoleIO {
             input_,
             message_,
             '\n',
-            [self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
-                self->HandleRead(error, bytes_transferred);
+            [this, self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
+                HandleRead(error, bytes_transferred);
             });
     }
 
-    ConsoleInput::ConsoleInput(boost::asio::io_service &io_service,
+    ConsoleInput::ConsoleInput(Tag,
+                               boost::asio::io_service &io_service,
                                Network::TcpClient client,
                                Parser::CommandDispatcher<Network::TcpClient> dispatcher) :
         dispatcher_(std::move(dispatcher)),
@@ -31,42 +35,41 @@ namespace ConsoleIO {
         input_(io_service, ::dup(STDIN_FILENO)) {
     }
 
-    void ConsoleInput::HandleRead(const boost::system::error_code &error, size_t bytes_transferred) {
-        const size_t args_num = 2;
-        std::string messageP;
-        std::stringstream ss;
-        ss << &message_;
-        ss.flush();
-        messageP = ss.str();
+    void ConsoleInput::HandleRead(const boost::system::error_code &error, size_t) {
+        if(!error) {
+            auto msg = Utils::StreamBufToString(message_);
 
-        ErrorCodes::eStatus_t status = dispatcher_.ParseRawString(messageP, client_);
-        switch(status) {
-            case ErrorCodes::eStatus_Ok:
-                LOG("SYS", "Comand has been executed successfully!");
-                break;
-            case ErrorCodes::eStatus_WrongArgsNum:
-                LOG("SYS", "Wrong number of command parametrs!");
-                break;
-            case ErrorCodes::eStatus_GeneralError:
-                LOG("SYS", "Unknown error!");
-                break;
-            case ErrorCodes::eStatus_LostConnection:
-                LOG("SYS", "There are no any connections!");
-                break;
-            case ErrorCodes::eStatus_WrongPort:
-                LOG("SYS", "Port argument is invalid!");
-                break;
-            case ErrorCodes::eStatus_PortAlreadyInUse:
-                LOG("SYS", "Port is already in use!");
-                break;
-            case ErrorCodes::eStatus_ConnectionRefused:
-                LOG("SYS", "Connection refused!");
-                break;
+            eStatus_t status = dispatcher_.ParseRawString(msg, client_);
+            switch(status) {
+                case eStatus_t::Ok:
+                    LOG("SYS", "Comand has been executed successfully!");
+                    break;
+                case eStatus_t::WrongArgsNum:
+                    LOG("SYS", "Wrong number of command parametrs!");
+                    break;
+                case eStatus_t::GeneralError:
+                    LOG("SYS", "Unknown error!");
+                    break;
+                case eStatus_t::LostConnection:
+                    LOG("SYS", "There are no any connections!");
+                    break;
+                case eStatus_t::WrongPort:
+                    LOG("SYS", "Port argument is invalid!");
+                    break;
+                case eStatus_t::PortAlreadyInUse:
+                    LOG("SYS", "Port is already in use!");
+                    break;
+                case eStatus_t::ConnectionRefused:
+                    LOG("SYS", "Connection refused!");
+                    break;
 
-            default:
-                break;
+                default:
+                    break;
+            }
+
+            Start();
+        } else {
+            LOG("SYS", "We have just lost console!");
         }
-
-        Start();
     }
 } // namespace ConsoleIO

@@ -13,82 +13,102 @@ namespace Commands {
     template<class T> class Connect : public Parser::ICommand<T>
     {
        public:
-        ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
-            const std::string NAME = "CONNECT";
-            const size_t args_num = 1;
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
+        ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
             if(args.size() == args_num) {
-                context.ptr->name = args[0];
-                LOG_NO_INPUT("SYS", "[" << args[0] << "] has been connected");
-                ret = ErrorCodes::eStatus_Ok;
+                context.ptr->name = args[1];
+                LOG_NO_INPUT("SYS", "[" << args[1] << "] has been connected");
+                ret = ErrorStatus::eStatus_t::Ok;
             } else {
-                ret = ErrorCodes::eStatus_WrongArgsNum;
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
             }
 
             return ret;
         }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "CONNECT";
+        const size_t args_num = 2;
     };
 
     template<class T> class Publish : public Parser::ICommand<T>
     {
        public:
-        ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
-            const std::string NAME = "PUBLISH";
-            const size_t args_num = 2;
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
+        ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
             if(args.size() >= args_num) {
-                std::string tmp = args[1];
-                for(auto i = args.begin() + 2; i != args.end(); ++i) {
+                std::string tmp = args[2];
+                for(auto i = args.begin() + 3; i != args.end(); ++i) {
                     tmp = tmp + " " + *i;
                 }
-                context.broker.Notify(args[0], tmp);
-                ret = ErrorCodes::eStatus_Ok;
+                context.broker.Notify(args[1], tmp);
+                ret = ErrorStatus::eStatus_t::Ok;
             } else {
-                ret = ErrorCodes::eStatus_WrongArgsNum;
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
             }
 
             return ret;
         }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "PUBLISH";
+        const size_t args_num = 3;
     };
     template<class T> class Subscribe : public Parser::ICommand<T>
     {
        public:
-        ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
-            const std::string NAME = "SUBSCRIBE";
-            const size_t args_num = 1;
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
+        ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
             if(args.size() == args_num) {
-                ret = context.broker.Subscribe(args[0], context.ptr);
-                if(ErrorCodes::eStatus_Ok == ret) {
+                ret = context.broker.Subscribe(args[1], context.ptr);
+                if(ErrorStatus::eStatus_t::Ok == ret) {
                     context.broker.Print();
-                    context.ptr->topics_.insert(args[0]);
+                    context.ptr->topics_.insert(args[1]);
                 }
             } else {
-                ret = ErrorCodes::eStatus_WrongArgsNum;
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
             }
 
             return ret;
         }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "SUBSCRIBE";
+        const size_t args_num = 2;
     };
     template<class T> class Unsubscribe : public Parser::ICommand<T>
     {
        public:
-        ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
-            const std::string NAME = "UNSUBSCRIBE";
-            const size_t args_num = 1;
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
+        ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
             if(args.size() == args_num) {
-                ret = context.broker.Unsubscribe(args[0], context.ptr);
-                if(ErrorCodes::eStatus_Ok == ret) {
+                ret = context.broker.Unsubscribe(args[1], context.ptr);
+                if(ErrorStatus::eStatus_t::Ok == ret) {
                     context.broker.Print();
-                    context.ptr->topics_.erase(args[0]);
+                    context.ptr->topics_.erase(args[1]);
                 }
             } else {
-                ret = ErrorCodes::eStatus_WrongArgsNum;
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
             }
 
             return ret;
         }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "UNSUBSCRIBE";
+        const size_t args_num = 2;
     };
 
 } // namespace Commands

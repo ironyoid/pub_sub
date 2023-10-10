@@ -13,113 +13,125 @@ namespace Commands {
     template<class T> class Connect : public Parser::ICommand<T>
     {
        public:
-        ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
-            const std::string NAME = "CONNECT";
-            const size_t args_num = 2;
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
+        ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
             if(args.size() == args_num) {
-                auto port = Utils::GetPortFromStr(args[0]);
+                auto port = Utils::GetPortFromStr(args[1]);
                 if(port) {
-                    ret = context.Connect(port.value(), args[1]);
+                    ret = context.Connect(port.value(), args[2]);
                 } else {
-                    ret = ErrorCodes::eStatus_WrongPort;
+                    ret = ErrorStatus::eStatus_t::WrongPort;
                 }
             } else {
-                ret = ErrorCodes::eStatus_WrongArgsNum;
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
             }
 
             return ret;
         }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "CONNECT";
+        static constexpr size_t args_num = 3;
     };
     template<class T> class Disconnect : public Parser::ICommand<T>
     {
        public:
-        ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
-            const std::string NAME = "DISCONNECT";
-            const size_t args_num = 0;
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
+        ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
             if(args.size() == args_num) {
                 ret = context.Disconnect();
             } else {
-                ret = ErrorCodes::eStatus_WrongArgsNum;
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
             }
 
             return ret;
         }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "DISCONNECT";
+        static constexpr size_t args_num = 1;
     };
     template<class T> class Publish : public Parser::ICommand<T>
     {
        public:
-        ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
-            const std::string NAME = "PUBLISH";
-            const size_t args_num = 2;
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
+        ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
             if(args.size() >= args_num) {
-                std::string tmp = NAME;
-                for(auto n : args) {
-                    tmp = tmp + " " + n;
+                std::string tmp = name;
+                for(auto i = args.begin() + 1; i != args.end(); ++i) {
+                    tmp = tmp + " " + *i;
                 }
                 tmp = tmp + "\n";
-                if(false == context.weak_connection.expired()) {
-                    auto shr_tmp = context.weak_connection.lock();
-                    if(shr_tmp->Write(tmp) == tmp.size()) {
-                        ret = ErrorCodes::eStatus_Ok;
-                    }
-                } else {
-                    ret = ErrorCodes::eStatus_LostConnection;
+                if(context.tcp_connection->Write(tmp) == tmp.size()) {
+                    ret = ErrorStatus::eStatus_t::Ok;
                 }
             } else {
-                ret = ErrorCodes::eStatus_WrongArgsNum;
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
             }
-
             return ret;
         }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "PUBLISH";
+        static constexpr size_t args_num = 3;
     };
+
     template<class T> class Subscribe : public Parser::ICommand<T>
     {
        public:
-        ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
-            const std::string NAME = "SUBSCRIBE";
-            const size_t args_num = 1;
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
+        ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
             if(args.size() == args_num) {
-                std::string tmp = NAME + " " + args[0] + "\n";
-                if(false == context.weak_connection.expired()) {
-                    auto shr_tmp = context.weak_connection.lock();
-                    if(shr_tmp->Write(tmp) == tmp.size()) {
-                        ret = ErrorCodes::eStatus_Ok;
-                    }
-                } else {
-                    ret = ErrorCodes::eStatus_LostConnection;
+                std::string tmp = name + " " + args[1] + "\n";
+
+                if(context.tcp_connection->Write(tmp) == tmp.size()) {
+                    ret = ErrorStatus::eStatus_t::Ok;
                 }
+
             } else {
-                ret = ErrorCodes::eStatus_WrongArgsNum;
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
             }
             return ret;
         }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "SUBSCRIBE";
+        static constexpr size_t args_num = 2;
     };
     template<class T> class Unsubscribe : public Parser::ICommand<T>
     {
        public:
-        ErrorCodes::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
-            const std::string NAME = "UNSUBSCRIBE";
-            const size_t args_num = 1;
-            ErrorCodes::eStatus_t ret = ErrorCodes::eStatus_GeneralError;
+        ErrorStatus::eStatus_t Execute (T &context, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
             if(args.size() == args_num) {
-                std::string tmp = NAME + " " + args[0] + "\n";
-                if(false == context.weak_connection.expired()) {
-                    auto shr_tmp = context.weak_connection.lock();
-                    if(shr_tmp->Write(tmp) == tmp.size()) {
-                        ret = ErrorCodes::eStatus_Ok;
-                    }
-                } else {
-                    ret = ErrorCodes::eStatus_LostConnection;
+                std::string tmp = name + " " + args[1] + "\n";
+                if(context.tcp_connection->Write(tmp) == tmp.size()) {
+                    ret = ErrorStatus::eStatus_t::Ok;
                 }
             } else {
-                ret = ErrorCodes::eStatus_WrongArgsNum;
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
             }
             return ret;
         }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "UNSUBSCRIBE";
+        static constexpr size_t args_num = 2;
     };
 
 } // namespace Commands

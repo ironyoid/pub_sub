@@ -24,11 +24,11 @@ int main (int argc, char *argv[]) {
     Commands::Unsubscribe<TcpClient> unsubscribe;
     CommandDispatcher<TcpClient> cmd_dispatcher{};
 
-    cmd_dispatcher.AddCommand("CONNECT", connect);
-    cmd_dispatcher.AddCommand("DISCONNECT", disconnect);
-    cmd_dispatcher.AddCommand("PUBLISH", publish);
-    cmd_dispatcher.AddCommand("SUBSCRIBE", subscribe);
-    cmd_dispatcher.AddCommand("UNSUBSCRIBE", unsubscribe);
+    cmd_dispatcher.AddCommand(connect);
+    cmd_dispatcher.AddCommand(disconnect);
+    cmd_dispatcher.AddCommand(publish);
+    cmd_dispatcher.AddCommand(subscribe);
+    cmd_dispatcher.AddCommand(unsubscribe);
 
     std::vector<std::string> arguments(argv + 1, argv + argc);
     if(Utils::CheckAddrArgument(arguments)) {

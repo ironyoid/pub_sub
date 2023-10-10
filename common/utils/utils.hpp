@@ -1,26 +1,27 @@
 #ifndef _UTILS_H__
 #define _UTILS_H__
-#include <boost/lexical_cast.hpp>
-#include <iostream>
 #include <string>
 #include <optional>
+#include "boost/asio.hpp"
 
-namespace ErrorCodes {
-    typedef enum {
-        eStatus_Ok = 0,
-        eStatus_WrongArgsNum,
-        eStatus_GeneralError,
-        eStatus_ElementExistsError,
-        eStatus_LostConnection,
-        eStatus_WrongPort,
-        eStatus_PortAlreadyInUse,
-        eStatus_ConnectionRefused,
-    } eStatus_t;
-} // namespace ErrorCodes
+namespace ErrorStatus {
+    enum class eStatus_t {
+        Ok = 0,
+        WrongArgsNum,
+        GeneralError,
+        ElementExistsError,
+        LostConnection,
+        WrongPort,
+        PortAlreadyInUse,
+        ConnectionRefused,
+        ConnectionAlreadyExist
+    };
+} // namespace ErrorStatus
 
 namespace Utils {
     std::optional<uint16_t> GetPortFromStr (const std::string &str);
     bool CheckAddrArgument (std::vector<std::string> args);
+    std::string StreamBufToString (boost::asio::streambuf &buffer);
 } // namespace Utils
 
 #endif /*_UTILS_H__*/

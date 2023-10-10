@@ -14,18 +14,22 @@ namespace ConsoleIO {
 
     class ConsoleInput : public boost::enable_shared_from_this<ConsoleInput>
     {
+        struct Tag {
+        };
+
        public:
         using pointer = boost::shared_ptr<ConsoleInput>;
 
         static ConsoleInput::pointer Create (boost::asio::io_service &io_service,
                                              Network::TcpClient client,
                                              Parser::CommandDispatcher<Network::TcpClient> dispatcher);
+        ConsoleInput(Tag,
+                     boost::asio::io_service &io_service,
+                     Network::TcpClient client,
+                     Parser::CommandDispatcher<Network::TcpClient> dispatcher);
         void Start (void);
 
        private:
-        ConsoleInput(boost::asio::io_service &io_service,
-                     Network::TcpClient client,
-                     Parser::CommandDispatcher<Network::TcpClient> dispatcher);
         void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
         /* Do not copy! */
         ConsoleInput(const ConsoleInput &) = delete;

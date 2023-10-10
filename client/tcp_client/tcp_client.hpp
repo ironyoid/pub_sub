@@ -16,18 +16,28 @@ namespace Network {
     class ConsoleInput;
     class TcpConnection : public boost::enable_shared_from_this<TcpConnection>
     {
+        struct Tag {
+        };
+
        public:
         using pointer = boost::shared_ptr<TcpConnection>;
         using weak_pointer = boost::weak_ptr<TcpConnection>;
-        static pointer Create (boost::asio::io_service &io_service, const std::string &addr, const std::string &name);
-        ErrorCodes::eStatus_t Connect (uint16_t port);
+        static pointer Create (boost::asio::io_service &io_service,
+                               const std::string &addr,
+                               const std::string &name,
+                               std::function<void(const std::string &name)> on_close);
+        ErrorStatus::eStatus_t Connect (uint16_t port);
         size_t Write (const std::string &msg);
         void Start (void);
         void Disconnect (void);
+        TcpConnection(Tag,
+                      boost::asio::io_service &io_service,
+                      const std::string &addr,
+                      const std::string &name,
+                      std::function<void(const std::string &name)> OnClose);
         ~TcpConnection();
 
        private:
-        explicit TcpConnection(boost::asio::io_service &io_service, const std::string &addr, const std::string &name);
         void HandleRead (const boost::system::error_code &error, size_t bytes_transferred);
         /* Do not copy! */
         TcpConnection(const TcpConnection &) = delete;
@@ -37,20 +47,21 @@ namespace Network {
         std::string name_;
         std::string addr_;
         boost::asio::ip::tcp::socket socket_;
+        std::function<void(const std::string &name)> on_close_;
     };
 
     class TcpClient
     {
        public:
         TcpClient(boost::asio::io_service &io_service, const std::string &addr);
-        ErrorCodes::eStatus_t Connect (uint16_t port, const std::string &name);
-        ErrorCodes::eStatus_t Disconnect (void);
-        TcpConnection::weak_pointer weak_connection;
-
         TcpClient(TcpClient &&moved) noexcept : io_service_(moved.io_service_) {
             addr_ = std::move(moved.addr_);
-            weak_connection = std::move(moved.weak_connection);
+            tcp_connection = std::move(moved.tcp_connection);
         }
+        ErrorStatus::eStatus_t Connect (uint16_t port, const std::string &name);
+        ErrorStatus::eStatus_t Disconnect (void);
+        void OnClose (const std::string &name);
+        TcpConnection::pointer tcp_connection;
 
        private:
         /* Do not copy! */
