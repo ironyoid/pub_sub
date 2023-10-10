@@ -9,6 +9,7 @@
 #include <utils.hpp>
 #include "logs.hpp"
 #include <boost/algorithm/string.hpp>
+#include <memory>
 
 namespace Parser {
 
@@ -23,15 +24,16 @@ namespace Parser {
     template<class T> class CommandDispatcher
     {
        public:
-        using StorageType = std::map<std::string, ICommand<T> *>;
+        using ElementType = std::unique_ptr<ICommand<T>>;
+        using StorageType = std::map<std::string, ElementType>;
 
         CommandDispatcher() = default;
 
-        ErrorStatus::eStatus_t AddCommand (ICommand<T> &command) {
+        ErrorStatus::eStatus_t AddCommand (ElementType command) {
             ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
-            auto map_itr = map_.find(command.GetName());
+            auto map_itr = map_.find(command->GetName());
             if(map_itr == map_.end()) {
-                map_[command.GetName()] = &command;
+                map_[command->GetName()] = std::move(command);
                 ret = ErrorStatus::eStatus_t::Ok;
             } else {
                 LOG("SYS", "Command already exists!");

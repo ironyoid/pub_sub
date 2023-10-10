@@ -9,7 +9,7 @@ using std::cout;
 using std::endl;
 using namespace ErrorStatus;
 using namespace Commands;
-
+using std::unique_ptr;
 namespace Network {
     Network::Broker::Broker() {
     }
@@ -161,7 +161,7 @@ namespace Network {
         UnsubscribeFromAll();
         try {
             socket_.close();
-            LOG_NO_INPUT("SYS", "[" << name << "] Socket has been closed!");
+            LOG_NO_INPUT("SYS", "[" << name << "] socket has been closed!");
         } catch(boost::system::error_code &err) {
             LOG_NO_INPUT("SYS", "[" << name << "] couldn't close the socket");
         }
@@ -177,10 +177,18 @@ namespace Network {
 
     TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :
         acceptor_(io_service, tcp::endpoint(tcp::v4(), port)) {
-        parser_.AddCommand(name_cmd);
-        parser_.AddCommand(pub_cmd);
-        parser_.AddCommand(sub_cmd);
-        parser_.AddCommand(unsub_cmd);
+        unique_ptr<Connect<ContextContainer>> connect
+            = unique_ptr<Connect<ContextContainer>>(new Connect<ContextContainer>());
+        unique_ptr<Publish<ContextContainer>> publish
+            = unique_ptr<Publish<ContextContainer>>(new Publish<ContextContainer>());
+        unique_ptr<Subscribe<ContextContainer>> subscribe
+            = unique_ptr<Subscribe<ContextContainer>>(new Subscribe<ContextContainer>());
+        unique_ptr<Unsubscribe<ContextContainer>> unsubscribe
+            = unique_ptr<Unsubscribe<ContextContainer>>(new Unsubscribe<ContextContainer>());
+        parser_.AddCommand(std::move(connect));
+        parser_.AddCommand(std::move(publish));
+        parser_.AddCommand(std::move(subscribe));
+        parser_.AddCommand(std::move(unsubscribe));
         StartAccept();
     }
 

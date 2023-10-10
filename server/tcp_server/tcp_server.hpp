@@ -108,11 +108,6 @@ namespace Network {
         Broker broker_;
         Parser::CommandDispatcher<ContextContainer> parser_;
         boost::asio::ip::tcp::acceptor acceptor_;
-
-        Commands::Connect<ContextContainer> name_cmd;
-        Commands::Publish<ContextContainer> pub_cmd;
-        Commands::Subscribe<ContextContainer> sub_cmd;
-        Commands::Unsubscribe<ContextContainer> unsub_cmd;
     };
 } // namespace Network
 #endif /* _TCP_SERVER_H__ */

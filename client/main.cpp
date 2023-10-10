@@ -10,25 +10,29 @@
 #include "console_input.hpp"
 #include "utils.hpp"
 #include "logs.hpp"
+#include <memory>
 
 using ConsoleIO::ConsoleInput;
 using Network::TcpClient;
 using Parser::CommandDispatcher;
+using std::unique_ptr;
+using namespace Commands;
 
 int main (int argc, char *argv[]) {
     int ret_code = EXIT_FAILURE;
-    Commands::Connect<TcpClient> connect;
-    Commands::Disconnect<TcpClient> disconnect;
-    Commands::Publish<TcpClient> publish;
-    Commands::Subscribe<TcpClient> subscribe;
-    Commands::Unsubscribe<TcpClient> unsubscribe;
+
+    unique_ptr<Connect<TcpClient>> connect = unique_ptr<Connect<TcpClient>>(new Connect<TcpClient>());
+    unique_ptr<Disconnect<TcpClient>> disconnect = unique_ptr<Disconnect<TcpClient>>(new Disconnect<TcpClient>());
+    unique_ptr<Publish<TcpClient>> publish = unique_ptr<Publish<TcpClient>>(new Publish<TcpClient>());
+    unique_ptr<Subscribe<TcpClient>> subscribe = unique_ptr<Subscribe<TcpClient>>(new Subscribe<TcpClient>());
+    unique_ptr<Unsubscribe<TcpClient>> unsubscribe = unique_ptr<Unsubscribe<TcpClient>>(new Unsubscribe<TcpClient>());
     CommandDispatcher<TcpClient> cmd_dispatcher{};
 
-    cmd_dispatcher.AddCommand(connect);
-    cmd_dispatcher.AddCommand(disconnect);
-    cmd_dispatcher.AddCommand(publish);
-    cmd_dispatcher.AddCommand(subscribe);
-    cmd_dispatcher.AddCommand(unsubscribe);
+    cmd_dispatcher.AddCommand(std::move(connect));
+    cmd_dispatcher.AddCommand(std::move(disconnect));
+    cmd_dispatcher.AddCommand(std::move(publish));
+    cmd_dispatcher.AddCommand(std::move(subscribe));
+    cmd_dispatcher.AddCommand(std::move(unsubscribe));
 
     std::vector<std::string> arguments(argv + 1, argv + argc);
     if(Utils::CheckAddrArgument(arguments)) {
