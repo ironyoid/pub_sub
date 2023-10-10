@@ -20,9 +20,9 @@ namespace Network {
 
     eStatus_t Broker::Unsubscribe(const std::string &topic, ElementType element) {
         eStatus_t ret = eStatus_GeneralError;
-        StorageType::const_iterator map_itr = storage_.find(topic);
+        auto map_itr = storage_.find(topic);
         if(map_itr != storage_.end()) {
-            ListType::const_iterator set_itr = storage_[topic].find(element);
+            auto set_itr = storage_[topic].find(element);
             if(set_itr != storage_[topic].end()) {
                 storage_[topic].erase(set_itr);
                 if(0 == storage_[topic].size()) {
