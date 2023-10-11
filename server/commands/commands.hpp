@@ -31,7 +31,7 @@ namespace Commands {
 
        private:
         static const inline std::string name = "CONNECT";
-        const size_t args_num = 2;
+        static constexpr size_t args_num = 2;
     };
 
     template<class T> class Publish : public Parser::ICommand<T>
@@ -58,7 +58,7 @@ namespace Commands {
 
        private:
         static const inline std::string name = "PUBLISH";
-        const size_t args_num = 3;
+        static constexpr size_t args_num = 3;
     };
     template<class T> class Subscribe : public Parser::ICommand<T>
     {
@@ -83,7 +83,7 @@ namespace Commands {
 
        private:
         static const inline std::string name = "SUBSCRIBE";
-        const size_t args_num = 2;
+        static constexpr size_t args_num = 2;
     };
     template<class T> class Unsubscribe : public Parser::ICommand<T>
     {
@@ -108,7 +108,7 @@ namespace Commands {
 
        private:
         static const inline std::string name = "UNSUBSCRIBE";
-        const size_t args_num = 2;
+        static constexpr size_t args_num = 2;
     };
 
 } // namespace Commands

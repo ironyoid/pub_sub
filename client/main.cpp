@@ -17,6 +17,7 @@ using namespace Commands;
 int main (int argc, char *argv[]) {
     int ret_code = EXIT_FAILURE;
 
+    unique_ptr<Help<TcpClient>> help = std::make_unique<Help<TcpClient>>();
     unique_ptr<Connect<TcpClient>> connect = std::make_unique<Connect<TcpClient>>();
     unique_ptr<Disconnect<TcpClient>> disconnect = std::make_unique<Disconnect<TcpClient>>();
     unique_ptr<Publish<TcpClient>> publish = std::make_unique<Publish<TcpClient>>();
@@ -24,6 +25,7 @@ int main (int argc, char *argv[]) {
     unique_ptr<Unsubscribe<TcpClient>> unsubscribe = std::make_unique<Unsubscribe<TcpClient>>();
     CommandDispatcher<TcpClient> cmd_dispatcher{};
 
+    cmd_dispatcher.AddCommand(std::move(help));
     cmd_dispatcher.AddCommand(std::move(connect));
     cmd_dispatcher.AddCommand(std::move(disconnect));
     cmd_dispatcher.AddCommand(std::move(publish));

@@ -3,6 +3,8 @@
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+#include <string>
+#include <string_view>
 #include "logs.hpp"
 
 using boost::bad_lexical_cast;
@@ -71,7 +73,7 @@ namespace Utils {
         return ret;
     }
 
-    std::string StreamBufToString (boost::asio::streambuf &buffer) {
+    const std::string StreamBufToString (boost::asio::streambuf &buffer) {
         std::string msg;
         std::stringstream ss;
         ss << &buffer;
@@ -79,4 +81,17 @@ namespace Utils {
         msg = ss.str();
         return msg;
     }
+
 } // namespace Utils
+
+namespace HelpString {
+    const char *help_str = R"(* CONNECT [port] [name] - Connect to a server with the target port, and client name
+* SUBSCRIBE [topic] - Subscribe to the topic(if there is no topic with the target name it will be created)
+* UNSUBSCRIBE [topic] - Unsubscribe from the topic
+* PUBLISH [topic] [data] - Publish data into the topic
+* DISCONNECT - Disconnect from the server
+    )";
+    void PrintHelp (void) {
+        std::cout << "\r" << help_str;
+    }
+} // namespace HelpString

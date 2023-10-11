@@ -40,10 +40,10 @@ namespace ConsoleIO {
             auto msg = Utils::StreamBufToString(message_);
 
             eStatus_t status = dispatcher_.ParseRawString(msg, client_);
-            LOG("SYS", ToString(status));
+            LOG_ERASE("SYS", ToString(status));
             Start();
         } else {
-            LOG("SYS", "We have just lost console!");
+            LOG_ERASE("SYS", "We have just lost console!");
         }
     }
 } // namespace ConsoleIO

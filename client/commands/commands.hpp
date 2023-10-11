@@ -9,6 +9,29 @@
 #include "parser.hpp"
 
 namespace Commands {
+    template<class T> class Help : public Parser::ICommand<T>
+    {
+       public:
+        ErrorStatus::eStatus_t Execute (T &, const std::vector<std::string> &args) {
+            ErrorStatus::eStatus_t ret = ErrorStatus::eStatus_t::GeneralError;
+            if(args.size() == args_num) {
+                HelpString::PrintHelp();
+                ret = ErrorStatus::eStatus_t::Ok;
+            } else {
+                ret = ErrorStatus::eStatus_t::WrongArgsNum;
+            }
+
+            return ret;
+        }
+        const std::string GetName (void) {
+            return name;
+        }
+
+       private:
+        static const inline std::string name = "help";
+        static constexpr size_t args_num = 1;
+    };
+
     template<class T> class Connect : public Parser::ICommand<T>
     {
        public:

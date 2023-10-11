@@ -22,7 +22,11 @@ namespace ErrorStatus {
 namespace Utils {
     std::optional<uint16_t> GetPortFromStr (const std::string &str);
     bool CheckAddrArgument (std::vector<std::string> args);
-    std::string StreamBufToString (boost::asio::streambuf &buffer);
+    const std::string StreamBufToString (boost::asio::streambuf &buffer);
 } // namespace Utils
+
+namespace HelpString {
+    void PrintHelp (void);
+} // namespace HelpString
 
 #endif /*_UTILS_H__*/
