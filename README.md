@@ -7,6 +7,7 @@
 The project is based on `cmake` and includes two targets:
 * `p3_client` - tcp client
 * `p3_server` - tcp server
+
 All shared code is present in `common` folder and linked as a static lib.
 ### How To Build And Run
 * Generate Makefiles: `cmake  -S . -B build -G "Unix Makefiles"`
