@@ -32,7 +32,6 @@ namespace Network {
         boost::asio::ip::tcp::socket &Socket ();
         void Start (void);
         void Print (void);
-        void SendMessage (const std::string &data);
         void AddToQueue (const std::string &data);
         TcpConnection(Tag,
                       const boost::asio::any_io_executor &io_service,

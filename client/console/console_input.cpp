@@ -30,9 +30,9 @@ namespace ConsoleIO {
                                boost::asio::io_service &io_service,
                                Network::TcpClient client,
                                Parser::CommandDispatcher<Network::TcpClient> dispatcher) :
+        input_(io_service, ::dup(STDIN_FILENO)),
         dispatcher_(std::move(dispatcher)),
-        client_(std::move(client)),
-        input_(io_service, ::dup(STDIN_FILENO)) {
+        client_(std::move(client)) {
     }
 
     void ConsoleInput::HandleRead(const boost::system::error_code &error, size_t) {
@@ -40,33 +40,7 @@ namespace ConsoleIO {
             auto msg = Utils::StreamBufToString(message_);
 
             eStatus_t status = dispatcher_.ParseRawString(msg, client_);
-            switch(status) {
-                case eStatus_t::Ok:
-                    LOG("SYS", "Comand has been executed successfully!");
-                    break;
-                case eStatus_t::WrongArgsNum:
-                    LOG("SYS", "Wrong number of command parametrs!");
-                    break;
-                case eStatus_t::GeneralError:
-                    LOG("SYS", "Unknown error!");
-                    break;
-                case eStatus_t::LostConnection:
-                    LOG("SYS", "There are no any connections!");
-                    break;
-                case eStatus_t::WrongPort:
-                    LOG("SYS", "Port argument is invalid!");
-                    break;
-                case eStatus_t::PortAlreadyInUse:
-                    LOG("SYS", "Port is already in use!");
-                    break;
-                case eStatus_t::ConnectionRefused:
-                    LOG("SYS", "Connection refused!");
-                    break;
-
-                default:
-                    break;
-            }
-
+            LOG("SYS", ToString(status));
             Start();
         } else {
             LOG("SYS", "We have just lost console!");

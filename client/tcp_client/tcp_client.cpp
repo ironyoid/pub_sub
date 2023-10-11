@@ -20,9 +20,9 @@ namespace Network {
                                  const std::string &addr,
                                  const std::string &name,
                                  std::function<void(const std::string &name)> on_close) :
-        socket_(io_service),
-        addr_(addr),
         name_(name),
+        addr_(addr),
+        socket_(io_service),
         on_close_(on_close){};
 
     eStatus_t TcpConnection::Connect(uint16_t port) {
@@ -72,9 +72,7 @@ namespace Network {
     void TcpConnection::HandleRead(const boost::system::error_code &error, size_t) {
         if(!error) {
             auto msg = Utils::StreamBufToString(message_);
-            msg.pop_back();
-            LOG_ERASE("Message", msg);
-
+            std::cout << "[Message] " << msg;
             Start();
         } else {
             LOG_ERASE("SYS", "[" << name_ << "] Connection error!");
@@ -86,9 +84,9 @@ namespace Network {
     void TcpConnection::Disconnect(void) {
         try {
             socket_.close();
-            LOG_NO_INPUT("SYS", "[" << name_ << "] Socket has been closed!");
+            LOG_ERASE("SYS", "[" << name_ << "] Socket has been closed!");
         } catch(boost::system::error_code &err) {
-            LOG_NO_INPUT("SYS", "[" << name_ << "] couldn't close ");
+            LOG_ERASE("SYS", "[" << name_ << "] couldn't close ");
         }
     }
 

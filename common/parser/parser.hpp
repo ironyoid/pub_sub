@@ -54,6 +54,7 @@ namespace Parser {
             std::vector<std::string> result;
             boost::split(result, s, boost::is_any_of(" "));
             if(0 != result.size()) {
+                /* Remove \n */
                 result.back().pop_back();
             }
             return result;

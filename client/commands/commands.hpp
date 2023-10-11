@@ -9,7 +9,6 @@
 #include "parser.hpp"
 
 namespace Commands {
-
     template<class T> class Connect : public Parser::ICommand<T>
     {
        public:

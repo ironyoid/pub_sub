@@ -8,6 +8,7 @@
 #include <optional>
 #include "parser.hpp"
 #include "tcp_client.hpp"
+#include "utils.hpp"
 #include <boost/asio/posix/stream_descriptor.hpp>
 
 namespace ConsoleIO {

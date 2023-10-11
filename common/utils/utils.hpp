@@ -16,6 +16,7 @@ namespace ErrorStatus {
         ConnectionRefused,
         ConnectionAlreadyExist
     };
+    const std::string ToString (ErrorStatus::eStatus_t &status);
 } // namespace ErrorStatus
 
 namespace Utils {

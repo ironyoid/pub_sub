@@ -76,20 +76,6 @@ namespace Network {
         return boost::make_shared<TcpConnection>(Tag{}, io_service, broker, parser);
     }
 
-    tcp::socket &TcpConnection::Socket() {
-        return socket_;
-    }
-
-    void TcpConnection::Start() {
-        async_read_until(
-            socket_,
-            message_,
-            '\n',
-            [self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
-                self->HandleRead(error, bytes_transferred);
-            });
-    }
-
     TcpConnection::TcpConnection(Tag,
                                  const boost::asio::any_io_executor &io_service,
                                  Broker &broker,
@@ -99,10 +85,18 @@ namespace Network {
         socket_(io_service) {
     }
 
-    TcpConnection::~TcpConnection() {
-        LOG_NO_INPUT("SYS",
-                     "[" << name << "]"
-                         << " has been deleted!");
+    tcp::socket &TcpConnection::Socket() {
+        return socket_;
+    }
+
+    void TcpConnection::Start() {
+        async_read_until(
+            socket_,
+            message_,
+            '\n',
+            [this, self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
+                HandleRead(error, bytes_transferred);
+            });
     }
 
     void TcpConnection::AddToQueue(const std::string &data) {
@@ -110,18 +104,14 @@ namespace Network {
         if(!accumulator.empty()) {
             if(for_send.empty()) {
                 for_send.swap(accumulator);
-                SendMessage(for_send);
+                boost::asio::async_write(socket_,
+                                         boost::asio::buffer(for_send),
+                                         [this, self = shared_from_this()] (const boost::system::error_code &error,
+                                                                            size_t bytes_transferred) {
+                                             HandleWrite(error, bytes_transferred);
+                                         });
             }
         }
-    }
-
-    void TcpConnection::SendMessage(const std::string &data) {
-        boost::asio::async_write(
-            socket_,
-            boost::asio::buffer(data),
-            [this, self = shared_from_this()] (const boost::system::error_code &error, size_t bytes_transferred) {
-                HandleWrite(error, bytes_transferred);
-            });
     }
 
     void TcpConnection::HandleWrite(const boost::system::error_code &error, size_t) {
@@ -131,13 +121,15 @@ namespace Network {
                 AddToQueue({});
             }
         } else {
+            for_send.clear();
+            accumulator.clear();
             Disconnect();
             LOG_NO_INPUT("SYS", "[" << name << "] Write error! Code: " << error.to_string());
         }
     }
 
     void TcpConnection::HandleRead(const boost::system::error_code &error, size_t) {
-        if((boost::asio::error::eof != error) && (boost::asio::error::connection_reset != error)) {
+        if(!error) {
             auto msg = Utils::StreamBufToString(message_);
             ContextContainer context{ broker_, shared_from_this() };
             parser_.ParseRawString(msg, context);
@@ -177,14 +169,10 @@ namespace Network {
 
     TcpServer::TcpServer(boost::asio::io_service &io_service, uint16_t port) :
         acceptor_(io_service, tcp::endpoint(tcp::v4(), port)) {
-        unique_ptr<Connect<ContextContainer>> connect
-            = unique_ptr<Connect<ContextContainer>>(new Connect<ContextContainer>());
-        unique_ptr<Publish<ContextContainer>> publish
-            = unique_ptr<Publish<ContextContainer>>(new Publish<ContextContainer>());
-        unique_ptr<Subscribe<ContextContainer>> subscribe
-            = unique_ptr<Subscribe<ContextContainer>>(new Subscribe<ContextContainer>());
-        unique_ptr<Unsubscribe<ContextContainer>> unsubscribe
-            = unique_ptr<Unsubscribe<ContextContainer>>(new Unsubscribe<ContextContainer>());
+        unique_ptr<Connect<ContextContainer>> connect = std::make_unique<Connect<ContextContainer>>();
+        unique_ptr<Publish<ContextContainer>> publish = std::make_unique<Publish<ContextContainer>>();
+        unique_ptr<Subscribe<ContextContainer>> subscribe = std::make_unique<Subscribe<ContextContainer>>();
+        unique_ptr<Unsubscribe<ContextContainer>> unsubscribe = std::make_unique<Unsubscribe<ContextContainer>>();
         parser_.AddCommand(std::move(connect));
         parser_.AddCommand(std::move(publish));
         parser_.AddCommand(std::move(subscribe));
@@ -206,5 +194,11 @@ namespace Network {
         }
 
         StartAccept();
+    }
+
+    TcpConnection::~TcpConnection() {
+        LOG_NO_INPUT("SYS",
+                     "[" << name << "]"
+                         << " has been deleted!");
     }
 } // namespace Network
