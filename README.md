@@ -13,7 +13,7 @@ All shared code is present in `common` folder and linked as a static lib.
 * Generate Makefiles: `cmake  -S . -B build -G "Unix Makefiles"`
 * Run build `cmake --build build --config Debug --target all`
 
-###How to use
+### How to use
 #### Server
 * Run server `./p3_server` with `port` argument, e.g: `./p3_server 1936`
 * You are able to monitor logs over terminal during the session
