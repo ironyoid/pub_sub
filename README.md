@@ -22,6 +22,8 @@ All shared code is present in `common` folder and linked as a static lib.
 * Use commands from the list below to manage your session
 
 #### Client Commands
+* `help` - print help
+
 * `CONNECT [port] [name]` - Connect to a server with the target port, and client name
     * port - server port (1-65535)
     * name - client name (string witout spaces)
