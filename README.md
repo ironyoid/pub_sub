@@ -1,4 +1,4 @@
-# P3 Mobility Code Assignment
+# Simple Pub/Sub 
 ### Overview
 * Writen in C++17
 * Boost::Asio as a network managment framework
